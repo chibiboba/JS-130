@@ -678,6 +678,7 @@ Number("123qwe") // NaN
 - The **reduce()** method executes a **reducer** function (that you provide) on each element of the array, resulting in single output value.
 
   - If no initial value is specified, accumulator's value is index 0, and current value is at index 1. If an initial value is specified, that’s the starting value of accumulator, and current value is at index 0. 
+  - Whatever the reducer function returns is the 'carry value' of the accumulator. 
 
 -  Syntax
 

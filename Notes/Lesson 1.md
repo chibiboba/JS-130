@@ -346,8 +346,6 @@ Let's get some practice emulating built-in Array methods.
    }
    ```
    
-   
-   
    ```js
    function map(array, callback, thisArg) {
      let newArray = [];
@@ -367,18 +365,16 @@ Before tackling the problems, you may want to read [this article](https://jrsinc
 
 ------
 
-##### [this article](https://jrsinclair.com/articles/2019/functional-js-do-more-with-reduce/) about `Array.prototype.reduce` method notes
+#### [this article](https://jrsinclair.com/articles/2019/functional-js-do-more-with-reduce/) about `Array.prototype.reduce` method notes
 
-- `reduce`
-
-  - `reduce` is the swiss army knife of array iterators
-
+- `reduce` is the swiss army knife of array iterators
   - Can build most of other iterator methods with it like `map()` `filter()` or `flatMap()`
-  - Tricky because it takes an accumulator value as well as current array element( current value).
-
-  - The reducer function is the first parameter we pass to `reduce()`. 
-
-  - power of `reduce()` is that the `accumulator` and `arrayElement` don't have to be the same type. 
+  - is tricky because its so different from `map` and `filter`
+- Definition
+  - The **reduce()** method executes a **reducer** function (that you provide) on each element of the array, resulting in single output value.
+    - If no initial value is specified, accumulator's value is index 0, and current value is at index 1. If an initial value is specified, that’s the starting value of accumulator, and current value is at index 0. 
+    - Whatever the reducer function returns is the 'carry value' of the accumulator. 
+  - Most basic behavior: reducing the elements of an array down to a single value based on the original array values. 
 
 
 - Syntax for `reduce()`
@@ -399,15 +395,14 @@ Before tackling the problems, you may want to read [this article](https://jrsinc
   }
   ```
 
-- Things we can do with `reduce`
+  - The reducer function is the first parameter we pass to `reduce()`. 
+  - The reducer function takes an accumulator value as well as current array element( current value).
+  - Accumulator is represents a 'carry' value: it contains whatever was returned last time the reducer function was called. If the reducer function hasn't been called yet, then it contains the initial value. 
 
-  - Add numbers together
-  - Convert an array to an object
-  - unfold to a larger array
-  - Make two calculations in one traversal
-  - combine mapping and filtering into one pass
+- Add or multiply numbers together with `reduce`
 
-- Add or multiply numbers together
+
+    - When we pass `add()` in as the reducer the accumulator maps to the `a` part of `a + b`. `a` *just so happens* to contain the running total of all the previous items.
 
   ```js
   function add(a, b) {
@@ -432,6 +427,7 @@ Before tackling the problems, you may want to read [this article](https://jrsinc
 - power of `reduce()` is that the `accumulator` and `arrayElement` don't have to be the same type. 
 
   - For example, our accumulator might be a string, while our array contains numbers
+  - Accumulator value doesn't have a be a simple type (like numbers or strings). It can't be a structured type like an array or plain ol' JavaScript object (POJO). 
 
   ```js
   function fizzBuzzReducer(acc, element) {
@@ -449,11 +445,304 @@ Before tackling the problems, you may want to read [this article](https://jrsinc
   console.log(nums.reduce(fizzBuzzReducer, ''));
   ```
 
-  
+  ```plain text
+  // output
+  1
+  2
+  Buzz
+  4
+  Fizz
+  Buzz
+  7
+  8
+  Buzz
+  Fizz
+  11
+  Buzz
+  13
+  14
+  Fizz Buzz
+  ```
+
+- Interesting things we can do with `reduce`
+
+  - Convert an array to an object
+  - Unfold to a larger array
+  - Make two calculations in one traversal
+  - Combine mapping and filtering into one pass
+  - Run asynchronous functions in sequence(ignore this)
+
+##### Convert an array to an object
+
+- We can use `.reduce()` to convert an array to a POJO. 
+- This can be handy if you need to do lookups of some sort. 
+- Say we had a list of people
+
+```js
+const peopleArr  = [
+    {
+        username:    'glestrade',
+        displayname: 'Inspector Lestrade',
+        email:       'glestrade@met.police.uk',
+        authHash:    'bdbf9920f42242defd9a7f76451f4f1d',
+        lastSeen:    '2019-05-13T11:07:22+00:00',
+    },
+    {
+        username:    'mholmes',
+        displayname: 'Mycroft Holmes',
+        email:       'mholmes@gov.uk',
+        authHash:    'b4d04ad5c4c6483cfea030ff4e7c70bc',
+        lastSeen:    '2019-05-10T11:21:36+00:00',
+    },
+    {
+        username:    'iadler',
+        displayname: 'Irene Adler',
+        email:       null,
+        authHash:    '319d55944f13760af0a07bf24bd1de28',
+        lastSeen:    '2019-05-17T11:12:12+00:00',
+    },
+];
+```
+
+In some circumstances, it might be convenient to look up user details by their username. To make that easier, we can convert our array to an object.
+
+```js
+function keyByUsernameReducer(acc, person) {
+    return {...acc, [person.username]: person}; // expand accumulator object because we only want its contents, the key value pairs instead of an object {}. 
+}
+const peopleObj = peopleArr.reduce(keyByUsernameReducer, {});
+console.log(peopleObj);
+// ⦘ {
+//     "glestrade": {
+//         "username":    "glestrade",
+//         "displayname": "Inspector Lestrade",
+//         "email":       "glestrade@met.police.uk",
+//         "authHash":    "bdbf9920f42242defd9a7f76451f4f1d",
+//          "lastSeen":    "2019-05-13T11:07:22+00:00"
+//     },
+//     "mholmes": {
+//         "username":    "mholmes",
+//         "displayname": "Mycroft Holmes",
+//         "email":       "mholmes@gov.uk",
+//         "authHash":    "b4d04ad5c4c6483cfea030ff4e7c70bc",
+//          "lastSeen":    "2019-05-10T11:21:36+00:00"
+//     },
+//     "iadler":{
+//         "username":    "iadler",
+//         "displayname": "Irene Adler",
+//         "email":       null,
+//         "authHash":    "319d55944f13760af0a07bf24bd1de28",
+//          "lastSeen":    "2019-05-17T11:12:12+00:00"
+//     }
+// }
+```
+
+In this version, I’ve left the username as part of the object. But with a small tweak you can remove it (if you need to).
+
+##### Unfold a small array to a larger array
+
+- Can use `.reduce()` to transform short arrays into longer ones. 
+  - This can be handy if you’re reading data from a text file.
+  - Example 1: Imagine we’ve read a bunch of plain text lines into an array. We’d like to split each line by commas, and have one big list of names.
+
+
+```js
+const fileLines = [
+    'Inspector Algar,Inspector Bardle,Mr. Barker,Inspector Barton',
+    'Inspector Baynes,Inspector Bradstreet,Inspector Sam Brown',
+    'Monsieur Dubugue,Birdy Edwards,Inspector Forbes,Inspector Forrester',
+    'Inspector Gregory,Inspector Tobias Gregson,Inspector Hill',
+    'Inspector Stanley Hopkins,Inspector Athelney Jones'
+];
+
+function splitLineReducer(acc, line) { // acc is accumulator, line is element.
+    return acc.concat(line.split(/,/g)); // concatenates the array. 
+}
+const investigators = fileLines.reduce(splitLineReducer, []);
+console.log(investigators);
+// ⦘ [
+//   "Inspector Algar",
+//   "Inspector Bardle",
+//   "Mr. Barker",
+//   "Inspector Barton",
+//   "Inspector Baynes",
+//   "Inspector Bradstreet",
+//   "Inspector Sam Brown",
+//   "Monsieur Dubugue",
+//   "Birdy Edwards",
+//   "Inspector Forbes",
+//   "Inspector Forrester",
+//   "Inspector Gregory",
+//   "Inspector Tobias Gregson",
+//   "Inspector Hill",
+//   "Inspector Stanley Hopkins",
+//   "Inspector Athelney Jones"
+// ]
+```
+
+- Or, we can use `.reduce()` to create our own `flatMap()` function.
+
+```js
+function flatMap(f, arr) {
+    const reducer = (acc, item) => acc.concat(f(item));
+    return arr.reduce(reducer, []);
+}
+
+const investigators = flatMap(x => x.split(','), fileLines);
+console.log(investigators);
+
+```
+
+- > `.flatMap()` is a proposal, it's not available in Internet Explorer or Edge. You pass it a function that returns an array an it will squish all the results together into a flat array.
+
+  - `Flatmap` abstracts away the mechanics of iterating and lets a callback function take are of the specific details of the iteration. 
+  - here we pass the callback function to `flatmap` which essentially becomes the reducer function for `reduce`. 
+  - This is the way to build functions using `reduce`. 
+
+So, `.reduce()` can help us make longer arrays out of short ones. But it can also cover for missing array methods that aren’t available. 
+
+##### Make two calculations in one traversal
+
+- Sometimes we need to make two calculations based on a single array. For example, we might want to calculate the maximum *and* the minimum for a list of numbers. We could do this with two passes like so:
+
+  ```js
+  const readings = [0.3, 1.2, 3.4, 0.2, 3.2, 5.5, 0.4];
+  const maxReading = readings.reduce((x, y) => Math.max(x, y), Number.MIN_VALUE);
+  const minReading = readings.reduce((x, y) => Math.min(x, y), Number.MAX_VALUE);
+  console.log({minReading, maxReading});
+  // ⦘ {minReading: 0.2, maxReading: 5.5}
+  ```
+
+- This requires traversing our array twice. But, there may be times when we don’t want to do that. Since `.reduce()` lets us return any type we want, we don’t have to return a number. We can encode two values into an object. Then we can do two calculations on each iteration and only traverse the array once:
+
+  ```js
+  const readings = [0.3, 1.2, 3.4, 0.2, 3.2, 5.5, 0.4];
+  function minMaxReducer(acc, reading) {
+      return {
+          minReading: Math.min(acc.minReading, reading),
+          maxReading: Math.max(acc.maxReading, reading),
+      };
+  }
+  const initMinMax = {
+      minReading: Number.MAX_VALUE, // 1.7976931348623157e+308
+      maxReading: Number.MIN_VALUE, //5e-324
+  };
+  const minMax = readings.reduce(minMaxReducer, initMinMax);
+  console.log(minMax);
+  // ⦘ {minReading: 0.2, maxReading: 5.5}
+  ```
+
+  - The trouble with this particular example is that we don’t really get a performance boost here. We still end up performing the same number of calculations. But, there are cases where it might make a genuine difference. For example, if we’re combining `.map()` and `.filter()` operations…
+
+##### Combine mapping and filtering into one pass
+
+```js
+const peopleArr  = [
+    {
+        username:    'glestrade',
+        displayname: 'Inspector Lestrade',
+        email:       'glestrade@met.police.uk',
+        authHash:    'bdbf9920f42242defd9a7f76451f4f1d',
+        lastSeen:    '2019-05-13T11:07:22+00:00',
+    },
+    {
+        username:    'mholmes',
+        displayname: 'Mycroft Holmes',
+        email:       'mholmes@gov.uk',
+        authHash:    'b4d04ad5c4c6483cfea030ff4e7c70bc',
+        lastSeen:    '2019-05-10T11:21:36+00:00',
+    },
+    {
+        username:    'iadler',
+        displayname: 'Irene Adler',
+        email:       null,
+        authHash:    '319d55944f13760af0a07bf24bd1de28',
+        lastSeen:    '2019-05-17T11:12:12+00:00',
+    },
+];
+```
+
+Using the same `peopleArr` from before. We’d like to find the most recent login, *excluding* people without an email address. One way to do this would be with three separate operations:
+
+1. Filter out entries without an email; then
+2. Extract the `lastSeen` property; and finally
+3. Find the maximum value.
+
+Putting that all together might look something like so:
+
+```js
+function notEmptyEmail(x) {
+   return (x.email !== null) && (x.email !== undefined);
+}
+
+function getLastSeen(x) {
+    return x.lastSeen;
+}
+
+function greater(a, b) { // returns greater value
+    return (a > b) ? a : b;
+}
+
+const peopleWithEmail = peopleArr.filter(notEmptyEmail);
+const lastSeenDates   = peopleWithEmail.map(getLastSeen);
+const mostRecent      = lastSeenDates.reduce(greater, '');
+
+console.log(mostRecent);
+// ⦘ 2019-05-13T11:07:22+00:00
+```
+
+Now, this code is perfectly readable and it works. For the sample data, it’s just fine. But if we had an enormous array, then there’s a chance we might start running into memory issues. This is because we use a variable to store each intermediate array. 
+
+If we modify our reducer callback, then we can do everything in one pass:
+
+```js
+function notEmptyEmail(x) {
+   return (x.email !== null) && (x.email !== undefined);
+}
+
+function greater(a, b) {
+    return (a > b) ? a : b;
+}
+function notEmptyMostRecent(currentRecent, person) { 
+  // If person element has an email, then return the greater of accumulator(currentRecent) & currentvalue (person.lastSeen). Else return accumulator value. 
+    return (notEmptyEmail(person))
+        ? greater(currentRecent, person.lastSeen)
+        : currentRecent;
+}
+
+const mostRecent = peopleArr.reduce(notEmptyMostRecent, '');
+
+console.log(mostRecent);
+// ⦘ 2019-05-13T11:07:22+00:00
+```
+
+In this version we traverse the array just once. But it may not be an improvement if the list of people is always small. My recommendation would be to stick with `.filter()` and `.map()` by default. If you identify memory-usage or performance issues, *then* look at alternatives like this.
 
 ------
 
+#### Optional Video 
 
+[link](https://www.youtube.com/watch?v=kC3AasLEuBA&ab_channel=AllThingsJavaScript%2CLLC)
+
+Note that the last example in this video uses concepts we haven't seen yet, but the explanation is good.
+
+```js
+const scores = [90, 30, 20, 75, 85, 95, 0, 55, 60, 40];
+
+let minMax = scores.reduce((acc, score) => [Math.min(acc[0], score), Math.max(acc[1], score)], [100, 0]); 
+// [100, 0] is the initial value
+
+console.log(minMax); // [0, 95]
+```
+
+<img src="C:\Users\jenny\AppData\Roaming\Typora\typora-user-images\image-20220714233234706.png" alt="image-20220714233234706" style="zoom:50%;" />
+
+- spread operator:  expand accumulator object because we only want its contents(properties and values), the key value pairs instead of an object {}. 
+- Use brackets `[]` to get the computed value. Because we don't want `"person.username"` as the key name. We want the computed value to be the key name. 
+
+------
+
+#### Problems
 
 1. Write a function that acts like the built-in `Array.prototype.reduce` method. For this problem, you only need to emulate the most basic behavior: reducing the elements of an array down to a single value based on the original array values. The result may be a primitive value, an object, or another array. You don't have to include the `thisArg` argument or support multiple arguments to the callback function, but feel free to add them if you like. Your function should work like this:
 
@@ -476,11 +765,73 @@ Before tackling the problems, you may want to read [this article](https://jrsinc
 
    Note that the function should not mutate the input array. Don't forget to account for the initialValue argument!
 
-   If you're a little fuzzy on how `reduce` works and what it's used for, check out [this optional video](https://www.youtube.com/watch?v=kC3AasLEuBA). Note that the last example in this video uses concepts we haven't seen yet, but the explanation is good.
+   > If you're a little fuzzy on how `reduce` works and what it's used for, check out [this optional video](https://www.youtube.com/watch?v=kC3AasLEuBA). Note that the last example in this video uses concepts we haven't seen yet, but the explanation is good.
 
-   Hint
+   Hint: Pay attention to how `Array.prototype.reduce` deals with the initial value argument.
+
+   - If no initial value is specified, accumulator's value is index 0, and current value is at index 1. If an initial value is specified, that’s the starting value of accumulator, and current value is at index 0. 
 
    Possible Solution
+
+   ```JS
+   // Their solution
+   function reduce(array, callback, initialValue) {
+     let accumulator = initialValue;
+     let index = 0;
+   
+     if (accumulator === undefined) {
+       accumulator = array[0];
+       index = 1;
+     }
+   
+     while (index < array.length) {
+       accumulator = callback(accumulator, array[index]);
+       index += 1;
+     }
+   
+     return accumulator;
+   }
+   ```
+
+   ```js
+   // first attempt -> success!
+   function reduce(array, reducerFn, initialValue = false) {
+     let acc;
+     if (!initialValue) {
+       acc = array[0];
+       for (let i = 1; i < array.length; i += 1) {
+         let elem = array[i];
+       	acc = reducerFn(acc, elem);
+     	}
+       return acc;
+     } else {
+       acc = initialValue;
+       for (let i = 0; i < array.length; i += 1) {
+         let elem = array[i];
+       	acc = reducerFn(acc, elem);
+     	}
+       return acc;
+     }
+   }
+   ```
+
+   ```js
+   // 2nd try
+   function reduce(array, reducerFn, initialValue) {
+     let acc = initialValue; 
+     let index = 0; 
+     if (acc === undefined) {
+       acc = array[0];
+       index = 1;
+     }
+     
+     while (index < array.length) {
+       acc = reducerFn(acc, array[index]);
+       index += 1;
+     }
+     return acc;
+   }
+   ```
 
 2. `Array.prototype.reduce` can be an incredibly useful function. You're not limited to simple accumulation-style processing, but can perform a wide variety of different tasks with it. For instance, you can emulate many of the standard Array methods, including `filter`, `map`, and more.
 
