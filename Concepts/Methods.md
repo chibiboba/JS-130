@@ -159,12 +159,24 @@
 - Syntax
 
   ```javascript
-  reduce((accumulator, current value, index, array) => { … }, initialValue)
+  reduce((accumulator, currentValue, index, array) => { … }, initialValue)
   
-  reduce((acc, cv) => acc + cv)
+  reduce((acc, cv) => acc + cv, initialValue)
   
   reduce(reducerFn, initialValue)
   ```
+
+- Syntax for the reducer function
+
+  ```js
+  function reducerFn(accumulator, arrayElement) {
+    // code
+  }
+  ```
+
+  - The reducer function is the first parameter we pass to `reduce()`. 
+  - The reducer function takes an accumulator value as well as current array element( current value).
+  - Accumulator is represents a 'carry' value: it contains whatever was returned last time the reducer function was called. If the reducer function hasn't been called yet, then it contains the initial value. 
 
 #### sort()
 

@@ -344,10 +344,8 @@ undefined >= 1; // false -- becomes NaN >= 1
 ```
 
 - Another example is  `if (value) {...}` ,  `value` is implicitly coerced to boolean. 
-
-- **Template Literals** implicitly coerce the interpolation expressions to strings. 
-
-  - Hence we don't write `${something.toString()}` or `${String(something)}`.
+- **Template Literals** implicitly coerce the interpolation expressions to strings by invoking the `toString()` method. 
+- Hence we don't write `${something.toString()}` or `${String(something)}`.
 
 ##### Explicit Type Coercion
 
@@ -406,6 +404,8 @@ NaN
   ```
 
 - **`String`** coerces any data type to to string. Works with `null` and `undefined`
+
+  - It does this by invoking `toString()`. 
 
   ```terminal
   > String(42)
