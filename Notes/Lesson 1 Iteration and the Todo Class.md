@@ -1422,7 +1422,7 @@ class TodoList {
 }
 ```
 
-##### Throwing reference errors and private methods
+##### Own notes: Throwing reference errors and private methods
 
 For simplicity, we raise a `ReferenceError` exception even if the index has the wrong type. A more nuanced treatment might raise a `TypeError` in that case, but a `ReferenceError` is sufficient for our purposes. (We'll talk more about throwing exceptions in the next lesson.)
 
