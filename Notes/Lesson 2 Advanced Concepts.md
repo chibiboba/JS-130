@@ -507,13 +507,17 @@ Hoisting is vital for JavaScript developers to understand, particularly in progr
 
 JavaScript engines operate in two main phases: a **creation phase** and an **execution phase**. 
 
-The execution phase occurs when the program runs code line-by-line. That's what most people mean when they talk about a program's execution. However, before the execution phase begins, the creation phase does some preliminary work. One of those work items is to find all of the variable, function, and class *declarations*. When it encounters each of these identifiers, it records the name and designates its scope.
-
-- **Creation phase**: finds all identifier declarations and records the name and designate its scope.
-  - Hoisting occurs in this phase: declarations get hoisted to the top of their defined scope.
+- **Creation phase**: finds all of the identifiers in your code and determines their scope at that time.
+  - finds all identifier declarations and records the names and designate their scopes.
+  - **Hoisting** occurs in this phase: declarations get hoisted to the top of their defined scope.
+  - Processing occurs from the top down during the creation phase.
+  - “Function declarations and function variables are always moved (‘hoisted’) to the top of their JavaScript scope by the JavaScript interpreter”. 
 - **Execution phase**: program runs code line - by- line. 
   - JS knows what variables exist and where they are in scope.
   - Code acts like the declarations were moved to the top of their respective scope. 
+  - When the execution phase occurs, JavaScript no longer cares about declarations. It does care about initialization and function/class definitions, but not the declarations themselves. The identifiers are already known, and their scope is already known. JavaScript merely needs to look up the identifiers as required.
+
+The execution phase occurs when the program runs code line-by-line. That's what most people mean when they talk about a program's execution. However, before the execution phase begins, the creation phase does some preliminary work. One of those work items is to find all of the variable, function, and class *declarations*. When it encounters each of these identifiers, it records the name and designates its scope.
 
 > The creation phase is sometimes erroneously(mistakenly) called the compilation phase.
 
@@ -577,9 +581,11 @@ This demonstrates that JavaScript is aware of the `foo` variable in the first sn
 
 ------
 
-##### significant difference between how hoisting works with `var`
+#####  how hoisting works with `var`
 
-- When a `var` variables are hoisted, they are given initial value of `undefined`. 
+- When a `var` variable is hoisted, they are given initial value of `undefined`. 
+
+  - Variable declarations get hoisted but their assignment expressions don’t. Assignment expression is initialized to `undefined`. 
 
   - Trying to access the value of `var` variable before the original statement with the `var` declaration gets executed will return `undefined`. 
 
@@ -589,24 +595,39 @@ This demonstrates that JavaScript is aware of the `foo` variable in the first sn
     console.log(bar); // 3
     ```
 
+  - If the assignment expression is a function definition, the function definition is assigned to `undefined`. 
+
+    ```js
+    console.log(bar); // undefined
+    var bar = function () {}
+    ```
+
+
+##### hoisting with `let` and `const`
+
 - When `let` and `const` variables are hoisted, they are not given an initial value. 
 
   - Unset variables are in the **Temporal Dead Zone**(TDZ). 
 
   - The variables remain in the TDZ until initialization code runs during the execution phase.
 
-  - Trying to access a variable in TDZ will result in a specific error.
+  - Trying to access a variable in TDZ will result in a specific error. The specific error indicates JS knows of the existence of variables in TDZ that haven't been initialized to a value yet.
 
     ```js
     console.log(foo); // ReferenceError: Cannot access 'foo' before initialization
     let foo;
     ```
 
-  - The specific error indicates JS knows of the existence of variables in TDZ that haven't been initialized to a value yet.
+  - It's interesting to note that the error message differs if you don't declare the variable at all:
+
+    ```js
+    console.log(baz); // ReferenceError: baz is not defined
+    ```
+
 
 ## Hoisting for Function Declarations
 
-- Hoisting works for function declarations and nested functions.
+##### Entire function body is hoisted
 
 JavaScript also hoists function declarations to the top of the scope. In fact, it hoists the entire function declaration, including the function body:
 
@@ -640,18 +661,9 @@ function foo() {
 }
 ```
 
-Even though `bar` is declared at the end of `foo`, we can still call `bar` at the beginning of the function. That's because hoisting makes the `bar` declaration available throughout `foo`.
+Even though `bar` is declared at the end of `foo`, we can still call `bar` at the beginning of the function. That's because hoisting makes the `bar` declaration available throughout `foo`. 
 
-------
-
-##### Stack overflow info
-
-[reference](https://stackoverflow.com/questions/73049240/why-does-this-code-output-undefined-and-then-raise-a-typeerror?noredirect=1#comment129017612_73049240)
-
-- Hoisting for function declarations works similarly to variables declared with `var`. 
-- Function declarations have function scope. 
-- Functions are hoisted to the top of the function scope, but are defined in order of execution.
-- Function declarations that are hoisted are initialized with value of `undefined`. Only during code execution are they defined. 
+- When function declaration is hoisted but the function is not defined, the function is initialized to value of `undefined`. 
 
 ```js
 if (false) {
@@ -659,18 +671,18 @@ if (false) {
 };
 
 console.log(baz); // undefined --> baz is declared but not defined.
-baz() // TypeError
+baz(); // TypeError
 ```
 
 Line 5 logs `undefined` because `baz` is declared but never defined.
 
-Line 6 throws a `TypeError` because the function declaration is hoisted to the top of the function scope. If the function is never declared, then you will get a `ReferenceError` message.
+Line 6 throws a `TypeError` because the function declaration is hoisted to the top of the function scope.
 
 ------
 
-##### Don't nest function declarations inside non-function blocks. 
+##### Rule: Never nest function declarations inside non-function blocks. 
 
-- Since you can get different behaviors with the same code, you shouldn't try to nest function declarations inside non-function blocks. If you must nest a function inside a block, use a function expression.
+Since you can get different behaviors with the same code, you shouldn't try to nest function declarations inside non-function blocks. If you must nest a function inside a block, use a function expression.
 
 While JavaScript functions have function scope, the specific hoisting behavior you'll see when you nest a function inside a block (such as an `if` statement) is inconsistent. ES6 standardized how such functions are treated, but it can still vary from depending on how your program is written. Before ES6, the behavior wasn't just inconsistent, it was undefined entirely. Creators of JavaScript engines were free to do whatever they wanted to do.
 
@@ -821,11 +833,52 @@ function foo() {
 foo();
 ```
 
-
-
 You may even get a syntax error with some implementations.
 
 Since you can get different behaviors with the same code, you shouldn't try to nest function declarations inside non-function blocks. If you must nest a function inside a block, use a function expression.
+
+> - Rule: Function Declarations are officially prohibited within non-function blocks (such as if) . However all browsers allow them and interpret them in different ways.
+>
+>   - For example the following code snippet in Firefox 3.6 throws an error because it interprets the Function Declaration as a Function Statement (see above) so `x` is not defined. However in IE8, Chrome 5 and Safari 5 the function `x` is returned (as expected with standard Function Declarations).
+>
+>     ```js
+>     function foo() {
+>         if(false) {
+>             function x() {};
+>         }
+>         return x;
+>     }
+>     console.log(foo()); // undefined
+>     ```
+
+------
+
+##### Stack overflow info
+
+[reference](https://stackoverflow.com/questions/73049240/why-does-this-code-output-undefined-and-then-raise-a-typeerror?noredirect=1#comment129017612_73049240)
+
+- Hoisting for function declarations works similarly to variables declared with `var`. 
+  - Function & `var` scope the same way. 
+  - Function declarations, like `var` declarations, have function scope. 
+- Functions are hoisted to the top of the function scope, but are defined in order of execution.
+- Function declarations that are hoisted but not defined are initialized with value of `undefined`. Only during code execution are they defined. 
+
+```js
+if (false) {
+  function baz(){}
+};
+
+console.log(baz); // undefined --> baz is declared but not defined.
+baz() // TypeError
+```
+
+Line 5 logs `undefined` because `baz` is declared but never defined.
+
+Line 6 throws a `TypeError` because the function declaration is hoisted to the top of the function scope. If the function is never declared, then you will get a `ReferenceError` message.
+
+> Another way to look at this `function x() {}` has the same scope as `var x = 1`, and if you `console.log(x)` before it's assigned you would get `undefined`. IOW: function & var scope the same way. So in modern JS, what you normally now do is -> `const x = 1` or `let x = 1`, and this will make them `block` scoped, you can do the same for functions `const x = () => {}` 
+>
+> -Keith
 
 ## Hoisting for Function Expressions
 
@@ -842,7 +895,7 @@ var hello = function () {
 is equivalent to:
 
 ```javascript
-var hello;
+var hello; // hello is declared and initialized to undefined
 
 console.log(hello());    // raises "TypeError: hello is not a function"
 
@@ -851,17 +904,64 @@ hello = function () {
 };
 ```
 
+```js
+console.log(hello); // undefined
+
+var hello = function () {
+  return 'hello world';
+};
+```
+
+```js
+console.log(hello); // ReferenceError: Cannot access 'hello' before initialization
+
+let hello = function () {
+  return 'hello world';
+};
+```
+
+
+
 ## Hoisting for Classes
+
+##### Class Declarations
 
 When JavaScript encounters a class declaration, the class name gets hoisted, but the definition of the class does not. Much like `let` and `const` variables, `class` declarations live in the TDZ until their definition code is executed.
 
+```js
+console.log(Hello); // ReferenceError: Cannot access 'Hello' before initialization
+class Hello {}
+```
+
+##### Class Expressions
+
 Hoisting for class expressions is similar: the variable name gets hoisted, but the definition doesn't get assigned to the name until the expression is evaluated.
+
+Class expressions also involve assigning a function to a declared variable. Those variables obey the usual hoisting rules for variable declarations.
+
+```js
+console.log(hello); // ReferenceError: Cannot access 'hello' before initialization
+let hello = class Hello {}
+```
+
+- `hello` is in the TDZ until the expression is evaluated. 
+
+```js
+console.log(hello); // undefined
+var hello = class Hello { }
+```
+
+- `hello` is initialized to `undefined`. 
 
 ## Hoisting Variable and Function Declarations
 
-What happens when a `var` variable and a function declaration have the same name? In that case, the function declaration gets hoisted to the top of the program and the variable declaration gets discarded. (Some people say that the function declaration gets hoisted above the variable declaration, but it's more correct to say that the variable declaration gets discarded.)
+##### Edge Case: What happens when a `var` variable and a function declaration have the same name? 
 
-Consider the following code snippets:
+- In that case, the function declaration gets hoisted to the top of the program and the variable declaration gets discarded. 
+  - The *variable declaration* gets discarded, but reassignment will still go through. 
+- (Some people say that the function declaration gets hoisted above the variable declaration, but it's more correct to say that the variable declaration gets discarded.)
+
+Consider the following code snippets. A slight change in code results in a significant change in the outcome. Let's look at the hoisted versions of these snippets too:
 
 snippet1
 
@@ -874,19 +974,6 @@ function bar() {
 }
 ```
 
-snippet2
-
-```javascript
-var bar = 'hello';
-bar();             // raises "TypeError: bar is not a function"
-
-function bar() {
-  console.log('world');
-}
-```
-
-A slight change in code results in a significant change in the outcome. Let's look at the hoisted versions of these snippets:
-
 snippet1
 
 ```javascript
@@ -896,6 +983,17 @@ function bar() {
 
 bar();
 bar = 'hello';
+```
+
+snippet2
+
+```javascript
+var bar = 'hello';
+bar();             // raises "TypeError: bar is not a function"
+
+function bar() {
+  console.log('world');
+}
 ```
 
 snippet2
@@ -910,6 +1008,10 @@ bar();
 ```
 
 Notice that we no longer have a declaration for the `bar` variable. Instead, the function declaration is at the top of the hoisted code, and the reassignments to `bar` both replace the function object with a string value. In the first snippet, we call `bar` before we reassign it to a string, so the code logs `world`. However, in the second snippet, `bar` is no longer a function when we try to invoke it, so we get an error.
+
+##### Edge Case: What if `var` variable and function declaration have different names?
+
+- Function declarations get hoisted above variable declarations.
 
 ## Best Practice to Avoid Confusion
 
@@ -952,8 +1054,6 @@ Hoisting can introduce confusion and subtle bugs if you don't pay careful attent
 
 - Declare functions before calling them:
 
-  Copy Code
-
   ```javascript
   function foo() {
     return 'hello';
@@ -968,6 +1068,10 @@ WHAT!!!? After all that, you're telling me that hoisting isn't real? Yup.
 
 Hoisting is really just a mental model that almost all JavaScript developers use to explain how scope works. There is no actual hoisting process in JavaScript. It wasn't even mentioned in the ECMAScript standards until recently. Even now, it's barely mentioned in passing. What's more, the mental model of hoisting is not perfect. There are edge cases for which hoisting doesn't provide a satisfactory explanation for how JavaScript works.
 
+##### Edge Case 1: accessing a variable before it's declared
+
+- Rule: Function declarations get hoisted above variable declarations. 
+
 In fact, hoisting breaks down in some situations. Consider this code:
 
 ```javascript
@@ -979,14 +1083,14 @@ function bar() {
 }
 ```
 
-The equivalent hoisted code -- assuming that function declarations get hoisted above variable declarations -- will look like this:
+The equivalent hoisted code -- assuming that function declarations get hoisted above variable declarations -- will look like this: 
 
 ```javascript
-function bar() {
+function bar() { 
   console.log(foo);
 }
 
-var foo;
+var foo; // bar gets hoisted above foo
 
 bar();          // logs undefined
 foo = 'hello';
@@ -999,6 +1103,8 @@ There are ways to adjust our mental model for hoisting to accommodate this situa
 The behavior that we try to explain with hoisting is merely a consequence of JavaScript's two phases: the creation and execution phases. As described earlier, the creation phase finds all of the identifiers in your code and determines their scope at that time.
 
 When the execution phase occurs, JavaScript no longer cares about declarations. It does care about initialization and function/class definitions, but not the declarations themselves. The identifiers are already known, and their scope is already known. JavaScript merely needs to look up the identifiers as required.
+
+##### Edge Case 2: Nothing gets hoisted
 
 Consider this code:
 
@@ -1013,6 +1119,10 @@ function boo() {
 JavaScript only encounters one declaration during the creation phase: the `boo` function on line 3. It puts the name `boo` in the global scope. The first thing that happens during the execution phase is that JavaScript encounters `boo()` on line 1. Since line 1 is in the global scope, JavaScript looks in the global scope for an identifier named `boo`. That name exists since it was found during the creation phase. Therefore, JavaScript only needs to call the `boo` function.
 
 The interesting thing here is that nothing got hoisted! All that happened is that the creation phase noticed that `boo` belonged to the global scope, so it recorded an appropriate entry. Nothing got moved around in your code.
+
+##### Edge Case 3: conflict with `let`
+
+Summarized:  processing occurs from the top down during the creation phase, so`SyntaxError` occurs on line 3. 
 
 Let's see what happens when there's a conflict between a function declaration and a variable declaration using `let`. Recall that you can't have two declarations with the same name if one of those names is declared by `let`. Given this information, what do you think happens if you run this code?
 
@@ -1048,10 +1158,632 @@ Keep in mind that we may ask you to explain how hoisting really works, so don't 
 
 ## More hoisting examples
 
+```js
+bar();              // ReferenceError: Cannot access 'foo' before initialization
+let foo = 'hello';
+
+function bar() {
+  console.log(foo);
+}
+```
+
 For more hoisting examples, check out [this blog](https://javascriptweblog.wordpress.com/2010/07/06/function-declarations-vs-function-expressions/).
+
+##### Question 1: functions with same names
+
+JavaScript supports overriding not overloading, meaning, that if you define two functions with the same name, the last one defined will override the previously defined version and every time a call will be made to the function, the last defined one will get executed.
+
+```js
+function foo(){
+    function bar() {
+        return 3;
+    }
+    return bar();
+    function bar() {
+        return 8;
+    }
+}
+console.log(foo()); // 8
+```
+
+##### Question 2: duplicate `var` declarations
+
+```js
+function foo(){
+    var bar = function() {
+        return 3;
+    };
+    return bar();
+    var bar = function() {
+        return 8;
+    };
+}
+console.log(foo()); // 3
+```
+
+##### Question 3:
+
+```js
+console.log(foo()); // 3
+function foo(){
+    var bar = function() {
+        return 3;
+    };
+    return bar();
+    var bar = function() {
+        return 8;
+    };
+}
+```
+
+##### Question 4:
+
+```js
+function foo(){
+    return bar();
+    var bar = function() {
+        return 3;
+    };
+    var bar = function() {
+        return 8;
+    };
+}
+console.log(foo()); // [Type Error: bar is not a function]
+```
+
+```js
+//**Simulated processing sequence for Question 4**
+function foo(){
+    //a declaration for each function expression
+    var bar = undefined;
+    var bar = undefined;
+    return bar(); //TypeError: "bar not defined"
+    //neither Function Expression is reached
+}
+console.log(foo());
+```
+
+
+
+------
+
+##### **What is a Function Declaration?**
+
+**Function Declaration**: defines a named function variable without requiring variable assignment. 
+
+- Function Declarations occur as standalone constructs and cannot be nested within non-function blocks.
+- It’s helpful to think of them as siblings of Variable Declarations. 
+- Just as Variable Declarations must start with “var”, Function Declarations must begin with “function”.
+
+```js
+function bar() {
+    return 3;
+}
+```
+
+ECMA 5 (13.0) defines the syntax as
+**function** *Identifier* ( *FormalParameterList*opt ) { *FunctionBody* }
+
+The function name is visible within it’s scope and the scope of it’s parent (which is good because otherwise it would be unreachable)
+
+```js
+function bar() {
+    return 3;
+}
+ 
+bar(); //3
+bar  //function
+```
+
+------
+
+##### **What is a Function Expression?**
+
+A **Function Expression** defines a function as a part of a larger expression syntax (typically a variable assignment )
+
+-  Functions defined via Functions Expressions can be named or anonymous. 
+- Function Expressions must not start with “function” (hence the parentheses around the self invoking example below). 
+
+```js
+//anonymous function expression
+var a = function() {
+    return 3;
+}
+ 
+//named function expression
+var a = function bar() {
+    return 3;
+}
+ 
+//self invoking function expression
+(function sayHello() {
+    alert("hello!");
+})();
+```
+
+ECMA 5 (13.0) defines the syntax as
+**function** *Identifier*opt ( *FormalParameterList*opt ) { *FunctionBody* }
+
+- (though this feels incomplete since it omits the requirement that the containing syntax be an expression and not start with “function”)
+
+- The function name (if any) is not visible outside of it’s scope (contrast with Function Declarations).
+
+------
+
+##### **So what’s a Function Statement?**
+
+Its sometimes just a pseudonym for a Function Declaration. However as [kangax](http://yura.thinkweb2.com/named-function-expressions/#function-statements) pointed out, in mozilla a Function Statement is an extension of Function Declaration allowing the Function Declaration syntax to be used anywhere a statement is allowed. It’s as yet non standard so not recommended for production development
+
+------
+
+**About that quiz….care to explain?**
+
+OK so Question 1 uses function declarations which means they get hoisted…
+
+##### **Wait, what’s Hoisting?**
+
+To quote [Ben Cherry’s excellent article](http://www.adequatelygood.com/2010/2/JavaScript-Scoping-and-Hoisting): “Function declarations and function variables are always moved (‘hoisted’) to the top of their JavaScript scope by the JavaScript interpreter”.
+
+When a function declaration is hoisted the entire function body is lifted with it, so after the interpreter has finished with the code in Question 1 it runs more like this:
+
+```js
+function foo(){
+    function bar() {
+        return 3;
+    }
+    return bar();
+    function bar() {
+        return 8;
+    }
+}
+console.log(foo()); // 8
+```
+
+```js
+//**Simulated processing sequence for Question 1**
+function foo(){
+    //define bar once
+    function bar() {
+        return 3;
+    }
+    //redefine it
+    function bar() {
+        return 8;
+    }
+    //return its invocation
+    return bar(); //8
+}
+alert(foo());
+```
+
+##### **But…but…we were always taught that code after the return statement is unreachable**
+
+In JavaScript execution there is Context (which ECMA 5 breaks into LexicalEnvironment, VariableEnvironment and ThisBinding) and Process (a set of statements to be invoked in sequence). Declarations contribute to the VariableEnvironment when the execution scope is entered. They are distinct from Statements (such as **return**) and are not subject to their rules of process.
+
+##### **Do Function Expressions get Hoisted too?**
+
+That depends on the expression. Let’s look at the first expression in Question 2:
+
+```js
+var bar = function() { // function definition is not hoisted.
+    return 3;
+};
+```
+
+The left hand side (*var bar*) is a Variable Declaration. Variable Declarations get hoisted but their Assignment Expressions don’t. 
+
+- So when **bar** is hoisted the interpreter initially sets `var bar = undefined`. The function definition itself is not hoisted.
+
+(ECMA 5 12.2 A variable with an *initializer* is assigned the value of its *AssignmentExpression* when the *VariableStatement* is executed, not when the variable is created.)
+
+Thus the code in Question 2 runs in a more intuitive sequence:
+
+```js
+function foo(){
+    var bar = function() {
+        return 3;
+    };
+    return bar();
+    var bar = function() {
+        return 8;
+    };
+}
+console.log(foo()); // 3
+```
+
+```js
+//**Simulated processing sequence for Question 2**
+function foo(){
+    //a declaration for each function expression
+    var bar = undefined;
+    var bar = undefined;
+    //first Function Expression is executed
+    bar = function() {
+        return 3;
+    };
+    // Function created by first Function Expression is invoked
+    return bar();
+    // second Function Expression unreachable
+}
+alert(foo()); //3
+```
+
+##### **Ok I think that makes sense. By the way, you’re wrong about Question 3. I ran it in Firebug and got an error**
+
+Try saving it in an HTML file and running it over Firefox. Or run it in IE8, Chrome or Safari consoles. Apparently the Firebug console does not practice function hoisting when it runs in its “global” scope (which is actually not global but a special “Firebug” scope – try running “this == window” in the Firebug console).
+
+Question 3 is based on similar logic to Question 1. This time it is the **foo** function that gets hoisted.
+
+##### **Now Question 4 seems easy. No function hoisting here…**
+
+Almost. If there were no hoisting at all, the TypeError would be “bar not defined” and not “bar not a function”. There’s no function hoisting, however there *is* variable hoisting. Thus **bar** gets declared up front but its value is not defined. Everything else runs to order.
+
+```js
+function foo(){
+    return bar();
+    var bar = function() {
+        return 3;
+    };
+    var bar = function() {
+        return 8;
+    };
+}
+console.log(foo()); // [Type Error: bar is not a function]
+```
+
+```js
+//**Simulated processing sequence for Question 4**
+function foo(){
+    //a declaration for each function expression
+    var bar = undefined;
+    var bar = undefined;
+    return bar(); //TypeError: "bar not defined"
+    //neither Function Expression is reached
+}
+alert(foo());
+```
+
+##### **What else should I watch out for?**
+
+Function Declarations are officially prohibited within non-function blocks (such as if) . However all browsers allow them and interpret them in different ways.
+
+For example the following code snippet in Firefox 3.6 throws an error because it interprets the Function Declaration as a Function Statement (see above) so x is not defined. However in IE8, Chrome 5 and Safari 5 the function x is returned (as expected with standard Function Declarations).
+
+```js
+function foo() {
+    if(false) {
+        function x() {};
+    }
+    return x;
+}
+alert(foo());
+```
+
+##### **I can see how using Function Declarations can cause confusion but are there any benefits?**
+
+Well you could argue that Function Declarations are forgiving – if you try to use a function before it is declared, hoisting fixes the order and the function gets called without mishap. But that kind of forgiveness does not encourage tight coding and in the long run is probably more likely to promote surprises than prevent them. After all, programmers arrange their statements in a particular sequence for a reason.
+
+##### **And there are other reasons to favour Function Expressions?**
+
+How did you guess?
+
+a) Function Declarations feel like they were intended to mimic Java style method declarations but Java methods are very different animals. In JavaScript functions are living objects with values. Java methods are just metadata storage. Both the following snippets define functions but only the Function Expression suggests that we are creating an object.
+
+```javascript
+//Function Declaration
+function add(a,b) {return a + b};
+//Function Expression
+var add = function(a,b) {return a + b};
+```
+
+b) Function Expressions are more versatile. A Function Declaration can only exist as a “statement” in isolation. All it can do is create an object variable parented by its current scope. In contrast a Function Expression (by definition) is part of a larger construct. If you want to create an anonymous function or assign a function to a prototype or as a property of some other object you need a Function Expression. Whenever you create a new function using a high order application such as [curry](https://javascriptweblog.wordpress.com/2010/04/05/curry-cooking-up-tastier-functions/) or [compose](https://javascriptweblog.wordpress.com/2010/04/14/compose-functions-as-building-blocks/) you are using a Function Expression. Function Expressions and Functional Programming are inseparable.
+
+```js
+//Function Expression
+var sayHello = alert.curry("hello!");
+```
+
+##### **Do Function Expressions have any drawbacks?**
+
+Typically functions created by Function Expressions are unnamed. For instance the following function is anonymous, *today* is just a reference to an unnamed function:
+
+```js
+var today = function() {return new Date()}
+```
+
+Does this really matter? Mostly it doesn’t, but as [Nick Fitzgerald](http://fitzgeraldnick.com/weblog/) has pointed out debugging with anonymous functions can be frustrating. He suggests using Named Function Expressions (NFEs) as a workaround:
+
+```js
+var today = function today() {return new Date()}
+```
+
+However as Asen Bozhilov points out (and Kangax [documents](http://yura.thinkweb2.com/named-function-expressions/#jscript-bugs)) NFEs do not work correctly in IE < 9
+
+##### **Conclusions?**
+
+Badly placed Function Declarations are misleading and there are few (if any) situations where you can’t use a Function Expression assigned to a variable instead. However if you must use Function Declarations, it will minimize confusion if you place them at the top of the scope to which they belong. I would never place a Function Declarations in an **if** statement.
+
+Having said all this you may well find yourself in situations where it makes sense to use a Function Declaration. That’s fine. Slavish adherance to rules is dangerous and often results in tortuous code. Much more important is that you understand the concepts so that you can make your own informed decisions. I hope this article helps in that regard.
+
+Comments are very welcome. Please let me know if you feel anything I’ve said is incorrect or if you have something to add.
 
 ## Summary
 
 In this assignment, we had a wide-ranging discussion of hoisting. Since hoisting's most glaring effects occur in conjunction with `var` statements, the concept isn't as important as it once was. However, hoisting still occurs in JavaScript, even when you don't use `var`, so you can't ignore it completely.
 
 In the next assignment, we'll get some practice dealing with hoisting and `var`. We'll then move on and explore a completely different topic: strict mode.
+
+------
+
+- [Courses](https://launchschool.com/course_catalog)
+- [JS130 More JavaScript Foundations](https://launchschool.com/courses/165307a8)
+- [Advanced Concepts](https://launchschool.com/lessons/43f23069)
+- \5. Practice Problems: Hoisting and the var Statement
+
+Give us your feedback
+
+# Practice Problems: Hoisting and the var Statement
+
+Let's get some practice working with hoisting and `var`.
+
+1. Consider the following code:
+
+   ```js
+   var foo = function() {
+     console.log("Bye");
+   };
+   
+   function foo() {
+     console.log("Hello");
+   }
+   
+   foo();
+   ```
+
+   Without running this code, what will it display? Explain your reasoning.
+
+   Solution
+
+2. Consider the following code:
+
+   ```js
+   for (var index = 0; index < 2; index += 1) {
+     console.log(foo);
+     if (index === 0) {
+       var foo = "Hello";
+     } else {
+       foo = "Bye";
+     }
+   }
+   
+   console.log(foo);
+   console.log(index);
+   ```
+
+   Without running this code, what does it print?
+
+   Solution
+
+3. The following code doesn't work:
+
+   ```js
+   bar();
+   
+   var bar = function() {
+     console.log("foo!");
+   };
+   ```
+
+   Without changing the order of the invocation and function definition, update this code so that it works.
+
+   Solution
+
+4. Without running the following code, determine what it logs to the console:
+
+   ```js
+   var bar = 82;
+   function foo() {
+     var bar = bar - 42;
+     console.log(bar);
+   }
+   
+   foo();
+   ```
+
+   Solution
+
+5. Rewrite the code below using `let` instead of `var`. Your goal here is to change the way the variables are declared without altering the output of the program.
+
+   ```js
+   function foo(condition) {
+     console.log(bar);
+   
+     qux = 0.5772;
+   
+     if (condition) {
+       var qux = 3.1415;
+       console.log(qux);
+     } else {
+       var bar = 24;
+   
+       var xyzzy = function() {
+         var qux = 2.7183;
+         console.log(qux);
+       };
+   
+       console.log(qux);
+       console.log(xyzzy());
+     }
+   
+     qux = 42;
+     console.log(qux);
+   }
+   
+   foo(true);
+   foo(false);
+   ```
+
+   Solution
+
+6. In a process called hoisting, JavaScript appears to reorganize code in such a way that certain declarations and definitions appear to be moved around. While this organization doesn't really occur, it's a useful mental model for understanding scope in a JavaScript program.
+
+   Rewrite the following code in a way that shows what the code would look like if hoisting were a real process that actually reorganized your code. The intent here is to clearly show how and when the various identifiers in this program are defined with respect to the code that actually gets executed.
+
+   ```js
+   Pet.prototype.walk = function() {
+     console.log(`${this.name} is walking.`);
+   };
+   
+   function Pet(name, image) {
+     this.name = name;
+     this.image =  image;
+   }
+   
+   class Image {
+     constructor(file) {
+       this.file = file;
+     }
+   }
+   
+   var catImage = new Image("cat.png");
+   var pudding = new Pet("Pudding", catImage);
+   ```
+
+   Solution
+
+------
+
+# My Summary for Lesson 2
+
+### Charts
+
+| Type                                      | How its hoisted                                              | Scope          |
+| ----------------------------------------- | ------------------------------------------------------------ | -------------- |
+| `var`                                     | Variable declarations get hoisted but their assignment expressions is initialized to `undefined`. | function scope |
+| Function declarations                     | Entire declaration including body(function definition) is hoisted. | function scope |
+| Function declarations that aren't defined | Function name is hoisted, but its definition initialized to `undefined`. | function scope |
+| Function expressions                      | Depends on how the variable is declared. Variable identifier is hoisted but the function definition may be initialized to `undefined` or in the TDZ. | depends        |
+| `let` `const`                             | in the TDZ; not defined to any initial value.                | block scope    |
+| Class declarations                        | class declarations have their identifiers made available at the top of their block-scope in an "unset" state (TDZ), until definition code is executed; class identifier is hoisted but its body(definition of the class) is not. | block scope    |
+| Class expression                          | variable identifier is hoisted but definition isn't assigned to name until expression is evaluated. | depends        |
+
+| Edge cases about hoisting                                   | How its hoisted                                              | Scope |
+| ----------------------------------------------------------- | ------------------------------------------------------------ | ----- |
+| `var` variable and function declaration have same name      | function declaration gets hoisted to the top of the program and the variable declaration gets discarded |       |
+| `var` variable and function declaration have different name | Function declarations are hoisted above variable declarations. |       |
+| Functions with same names                                   | The same way during creation phase, from top to down. Last defined function overrides previous ones. |       |
+| Duplicate `var` declarations                                |                                                              |       |
+
+### Edge Cases
+
+##### Functions with same names 
+
+- Rule: Overriding: if you define two functions with the same name, the last one defined will override the previously defined version and every time a call will be made to the function, the last defined one will get executed.
+
+- Example
+
+  ```js
+  function foo(){
+      function bar() {
+          return 3;
+      }
+      return bar();
+      function bar() {
+          return 8;
+      }
+  }
+  console.log(foo()); // 8
+  ```
+
+  ```js
+  //**Simulated processing sequence**
+  function foo(){
+      //define bar once
+      function bar() {
+          return 3;
+      }
+      //redefine it
+      function bar() {
+          return 8;
+      }
+      //return its invocation
+      return bar(); //8
+  }
+  alert(foo());
+  ```
+
+##### Duplicate `var` declarations
+
+- General Rule: Variables with an initializer is assigned the value of its assignment expression when the variable statement is executed, not when the variable is created.
+
+- Specific rule about variables declared with `var` : the variable declaration is hoisted but the assignment expressions is initialized to `undefined`.
+
+- Example 1
+
+  ```js
+  function foo(){
+      var bar = function() {
+          return 3;
+      };
+      return bar();
+      var bar = function() {
+          return 8;
+      };
+  }
+  console.log(foo()); // 3
+  ```
+
+  ```js
+  //**Simulated processing sequence**
+  function foo(){
+      //a declaration for each function expression
+      var bar = undefined;
+      var bar = undefined;
+      //first Function Expression is executed
+      bar = function() {
+          return 3;
+      };
+      // Function created by first Function Expression is invoked
+      return bar();
+      // second Function Expression unreachable
+  }
+  alert(foo()); //3
+  ```
+
+- Example 2
+
+  ```js
+  var a = 1;
+  var a = 2;
+  
+  console.log(a); // 2
+  // Explanation: no hoisting occurs here? 
+  ```
+
+- Example 3
+
+  ```js
+  var a = 1;
+  console.log(a); // 1
+  var a = 2;
+  ```
+
+  ```js
+  // equivalent to
+  var a = 1;
+  var a = undefined;
+  
+  console.log(a); // 1
+  a = 2;
+  // explanation?? does it just not choose the undefined value
+  ```
+
+- Example 4
+
+  ```js
+  console.log(a); // undefined
+  
+  var a = 1;
+  ```
+
+  

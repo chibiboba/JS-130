@@ -1484,7 +1484,7 @@ for (let index = 0; index < numbers.length; index += 1) {
 - **binary**: when operator works with 2 values, **ternary**: operator works with 3 values, **unary**: operator works with one value. 
 - **Append** is **to join or add on to the end of something.**
 
-- **Const**: Variables declared using **`const`** are not necessarily immutable. If you declare an object with `const`, the object's properties can still be changed. However, the variable identifier cannot be reassigned to a different value. 
+- **Const**: Variables declared using **`const`** are not necessarily immutable. If you declare an <u>object</u> with `const`, the object's properties can still be changed. However, the variable identifier cannot be reassigned to a different value. 
   - `Const` prohibits changing what `const` points to, but does not prohibit changing the `const` object properties.
   - we can't reassign an object declared with `const`, but we can still mutate it (add and change the properties of the object). 
 
