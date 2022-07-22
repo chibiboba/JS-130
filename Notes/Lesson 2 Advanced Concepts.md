@@ -215,6 +215,19 @@ The effect of the wrapper function may sound like a bizarre edge case that won't
 
 - In general, blocks appear in `if...else`, `while`, `do...while`, `for`, `switch`, and `try...catch` statements, or by themselves (as in the first example above).
 
+- You can define variables in an `if...else` block scope and the variable is available in the entire block scope. 
+
+  ```js
+  let b = 0;
+  if (b) {
+    let a = 1;
+    console.log(a);
+  } else {
+    a = 2;
+    console.log(a); // 2
+  }
+  ```
+
 ------
 
 ##### Note: summary
@@ -510,8 +523,9 @@ JavaScript engines operate in two main phases: a **creation phase** and an **exe
 - **Creation phase**: finds all of the identifiers in your code and determines their scope at that time.
   - finds all identifier declarations and records the names and designate their scopes.
   - **Hoisting** occurs in this phase: declarations get hoisted to the top of their defined scope.
-  - Processing occurs from the top down during the creation phase.
   - “Function declarations and function variables are always moved (‘hoisted’) to the top of their JavaScript scope by the JavaScript interpreter”. 
+  - In a process called **hoisting**, JavaScript appears to reorganize code in such a way that certain declarations and definitions appear to be moved around. While this organization doesn't really occur, it's a useful mental model for understanding scope in a JavaScript program.
+  - Processing occurs from the top down during the creation phase.
 - **Execution phase**: program runs code line - by- line. 
   - JS knows what variables exist and where they are in scope.
   - Code acts like the declarations were moved to the top of their respective scope. 
@@ -581,7 +595,7 @@ This demonstrates that JavaScript is aware of the `foo` variable in the first sn
 
 ------
 
-#####  how hoisting works with `var`
+#####  hoisting with `var`
 
 - When a `var` variable is hoisted, they are given initial value of `undefined`. 
 
@@ -595,12 +609,29 @@ This demonstrates that JavaScript is aware of the `foo` variable in the first sn
     console.log(bar); // 3
     ```
 
+    ```js
+    // equivaent code
+    var bar = undefined;
+    console.log(bar); 
+    bar = 3;
+    console.log(bar); 
+    ```
+  
   - If the assignment expression is a function definition, the function definition is assigned to `undefined`. 
-
+  
     ```js
     console.log(bar); // undefined
     var bar = function () {}
     ```
+    
+    ```js
+    // equivalent code
+    var bar = undefined;
+    console.log(bar);
+    bar = function () {};
+    ```
+    
+    
 
 
 ##### hoisting with `let` and `const`
@@ -609,7 +640,7 @@ This demonstrates that JavaScript is aware of the `foo` variable in the first sn
 
   - Unset variables are in the **Temporal Dead Zone**(TDZ). 
 
-  - The variables remain in the TDZ until initialization code runs during the execution phase.
+  - The variables remain in the TDZ until initialization code runs during the execution phase. (either initializing to `undefined` or the given assignment expression). 
 
   - Trying to access a variable in TDZ will result in a specific error. The specific error indicates JS knows of the existence of variables in TDZ that haven't been initialized to a value yet.
 
@@ -624,12 +655,29 @@ This demonstrates that JavaScript is aware of the `foo` variable in the first sn
     console.log(baz); // ReferenceError: baz is not defined
     ```
 
+- Code example with no hoisting.
+
+  - When you <u>execute</u> a variable declared with `let`, JS initializes the variable to a value of  `undefined`.
+
+    ```js
+    let a;
+    console.log(a); // logs undefined, line 2 is execution statement
+    ```
+
+  - But if the variable is hoisted, the variable is still in the TDZ and is not defined yet. 
+
+    ```js
+    console.log(a);
+    let a;
+    ```
 
 ## Hoisting for Function Declarations
 
 ##### Entire function body is hoisted
 
-JavaScript also hoists function declarations to the top of the scope. In fact, it hoists the entire function declaration, including the function body:
+- If we want to call a function before its body is defined, we need to use a function declaration. 
+
+- JavaScript hoists function declarations to the top of the scope. In fact, it hoists the entire function declaration, including the function body:
 
 ```javascript
 console.log(hello());
@@ -882,7 +930,11 @@ Line 6 throws a `TypeError` because the function declaration is hoisted to the t
 
 ## Hoisting for Function Expressions
 
-Function expressions often involve assigning a function to a declared variable. Those variables obey the usual hoisting rules for variable declarations. Thus:
+- Function expressions often involve assigning a function to a declared variable. Those variables obey the usual hoisting rules for variable declarations. 
+  - Value of hoisted identifier depends on how the variable is declared. Variable identifier is hoisted but the function definition may be initialized to `undefined` or in the TDZ.
+- Function expressions don't hoist the function body, only function declarations do. 
+
+Thus:
 
 ```javascript
 console.log(hello());
@@ -924,7 +976,7 @@ let hello = function () {
 
 ## Hoisting for Classes
 
-##### Class Declarations
+#### Class Declarations
 
 When JavaScript encounters a class declaration, the class name gets hoisted, but the definition of the class does not. Much like `let` and `const` variables, `class` declarations live in the TDZ until their definition code is executed.
 
@@ -933,7 +985,83 @@ console.log(Hello); // ReferenceError: Cannot access 'Hello' before initializati
 class Hello {}
 ```
 
-##### Class Expressions
+- Example of class declaration during hoisting
+
+  ```js
+  Pet.prototype.walk = function() {
+    console.log(`${this.name} is walking.`);
+  };
+  
+  function Pet(name, image) {
+    this.name = name;
+    this.image =  image;
+  }
+  
+  class Image {
+    constructor(file) {
+      this.file = file;
+    }
+  }
+  
+  var catImage = new Image("cat.png");
+  var pudding = new Pet("Pudding", catImage);
+  ```
+
+  Solution
+
+  ```js
+  function Pet(name, image) {
+    this.name = name;
+    this.image =  image;
+  }
+  
+  let Image;
+  var catImage;
+  var pudding;
+  
+  Pet.prototype.walk = function() {
+    console.log(`${this.name} is walking.`);
+  };
+  
+  Image = class {
+    constructor(file) {
+      this.file = file;
+    }
+  };
+  
+  catImage = new Image("cat.png");
+  pudding = new Pet("Pudding", catImage);
+  ```
+
+  Explanation: This is an okay representation of what actually happens during the creation phase. In this code, `Image` is now a variable declared with `let`. If we were to log the values, it shows that `Image` is in the unset TDZ, whereas `catImage` and `pudding` are initialized to `undefined`.
+
+  ```js
+  function Pet(name, image) {
+    this.name = name;
+    this.image = image;
+  }
+  console.log(catImage); // undefined
+  console.log(Image); // ReferenceError: Cannot access 'Image' before initialization
+  
+  let Image;
+  var catImage;
+  var pudding;
+  
+  Pet.prototype.walk = function () {
+    console.log(`${this.name} is walking.`);
+  };
+  
+  Image = class {
+    constructor(file) {
+      this.file = file;
+    }
+  };
+  
+  catImage = new Image("cat.png");
+  pudding = new Pet("Pudding", catImage);
+  ```
+
+#### Class Expressions
 
 Hoisting for class expressions is similar: the variable name gets hoisted, but the definition doesn't get assigned to the name until the expression is evaluated.
 
@@ -1007,7 +1135,7 @@ bar = 'hello';
 bar();
 ```
 
-Notice that we no longer have a declaration for the `bar` variable. Instead, the function declaration is at the top of the hoisted code, and the reassignments to `bar` both replace the function object with a string value. In the first snippet, we call `bar` before we reassign it to a string, so the code logs `world`. However, in the second snippet, `bar` is no longer a function when we try to invoke it, so we get an error.
+Notice that we no longer have a declaration for the `bar` variable. Instead, the function declaration is at the top of the hoisted code, and the <u>reassignments</u> to `bar` both replace the function object with a string value. In the first snippet, we call `bar` before we reassign it to a string, so the code logs `world`. However, in the second snippet, `bar` is no longer a function when we try to invoke it, so we get an error.
 
 ##### Edge Case: What if `var` variable and function declaration have different names?
 
@@ -1544,6 +1672,24 @@ Let's get some practice working with hoisting and `var`.
 
    Solution
 
+   This code logs `Bye` on line 9. 
+
+   The code is equivalent to the following: 
+
+   ```js
+   function foo() {
+     console.log("Hello");
+   }
+   
+   foo = function() {
+     console.log("Bye");
+   };
+   
+   foo(); // 'Bye' 
+   ```
+
+   This code first defines a variable `foo` whose value is a function expression, then declares a function with the same name as the variable. When a variable and function declaration has the same name, the function declaration is hoisted to the top of the program and the variable declaration is discarded. Variable `foo` is reassigned to the first function from the original code as its value which displays `Bye` when invoked. 
+
 2. Consider the following code:
 
    ```js
@@ -1564,10 +1710,36 @@ Let's get some practice working with hoisting and `var`.
 
    Solution
 
+   ```js
+   // working notes
+   for (var index = 0; index < 2; index += 1) { // index is on outer scope of for loop on line 1 (inner scope can access variables from outer scope)
+     console.log(foo);
+     if (index === 0) {
+       var foo = "Hello"; // foo is on the outer scope 
+     } else {
+       foo = "Bye";
+     }
+   }
+   
+   console.log(foo); // Bye
+   console.log(index); // 1
+   ```
+
+   This code logs
+
+   ```
+   undefined
+   Hello
+   Bye
+   2
+   ```
+
+   On line 4, variable `foo` is declared with `var`, so it has function scope. This means it's outside the scope of the `if` statement on line 3. The variable is available before the declaration on line 4, in the `if...else` block, as well as the code after the `for` loop. On the first execution of line 2, `foo` is defined due to hoisting so it has an initial value of `undefined`. On the second execution, `foo` has been set to `Hello`. Finally when the loop exits, the value of `foo` is Bye. 
+
 3. The following code doesn't work:
 
    ```js
-   bar();
+   bar(); // TypeError: bar is not a function
    
    var bar = function() {
      console.log("foo!");
@@ -1577,6 +1749,27 @@ Let's get some practice working with hoisting and `var`.
    Without changing the order of the invocation and function definition, update this code so that it works.
 
    Solution
+
+   ```js
+   // what happens during hoisting
+   var bar = undefined;
+   bar();
+   
+   bar = function() {
+     console.log("foo!");
+   };
+   ```
+
+   ```js
+   // solution
+   bar();
+   
+   function bar() {
+     console.log("foo!");
+   }
+   ```
+
+   If we want to call a function before its body is defined, we need to use a function declaration. 
 
 4. Without running the following code, determine what it logs to the console:
 
@@ -1591,6 +1784,20 @@ Let's get some practice working with hoisting and `var`.
    ```
 
    Solution
+
+   ```js
+   // Hoisting treats code as though we wrote it like this
+   function foo() {
+     var bar = undefined;
+     bar = bar - 42; // undefined - 42 results in NaN
+     console.log(bar);
+   }
+   var bar = undefined;
+   bar = 82;
+   foo(); // NaN
+   ```
+
+   This code logs `NaN`, because `bar` is `undefined` when we try to subtract `42` from it. That operation reassigns `bar` to `Nan`, which is what is logged to the console. 
 
 5. Rewrite the code below using `let` instead of `var`. Your goal here is to change the way the variables are declared without altering the output of the program.
 
@@ -1623,7 +1830,51 @@ Let's get some practice working with hoisting and `var`.
    foo(false);
    ```
 
+   ```
+   undefined
+   3.1415
+   42
+   undefined
+   0.5772
+   2.7183
+   undefined
+   42
+   ```
+
    Solution
+
+   ```js
+   function foo(condition) {
+     let bar;
+   
+     console.log(bar);
+   
+     let qux = 0.5772;
+   
+     if (condition) {
+       qux = 3.1415;
+       console.log(qux);
+     } else {
+       bar = 24;
+   
+       let xyzzy = function() {
+         let qux = 2.7183; // variable shadowing
+         console.log(qux);
+       };
+   
+       console.log(qux);
+       console.log(xyzzy());
+     }
+   
+     qux = 42;
+     console.log(qux);
+   }
+   
+   foo(true);
+   foo(false);
+   ```
+
+   
 
 6. In a process called hoisting, JavaScript appears to reorganize code in such a way that certain declarations and definitions appear to be moved around. While this organization doesn't really occur, it's a useful mental model for understanding scope in a JavaScript program.
 
@@ -1651,6 +1902,61 @@ Let's get some practice working with hoisting and `var`.
 
    Solution
 
+   ```js
+   function Pet(name, image) {
+     this.name = name;
+     this.image =  image;
+   }
+   
+   let Image;
+   var catImage = undefined;
+   var pudding = undefined;
+   
+   Pet.prototype.walk = function() {
+     console.log(`${this.name} is walking.`);
+   };
+   
+   
+   Image = class {
+     constructor(file) {
+       this.file = file;
+     }
+   }
+   
+   catImage = new Image("cat.png");
+   pudding = new Pet("Pudding", catImage);
+   ```
+
+   Explanation: This is an okay representation of what actually happens during the creation phase. In this code, `Image` is now a variable declared with `let`. If we were to log the values, it shows that `Image` is in the unset TDZ, where as `catImage` and `pudding` are initialized to `undefined`.
+
+   ```js
+   function Pet(name, image) {
+     this.name = name;
+     this.image = image;
+   }
+   console.log(catImage); // undefined
+   console.log(Image); // ReferenceError: Cannot access 'Image' before initialization
+   
+   let Image;
+   var catImage;
+   var pudding;
+   
+   Pet.prototype.walk = function () {
+     console.log(`${this.name} is walking.`);
+   };
+   
+   Image = class {
+     constructor(file) {
+       this.file = file;
+     }
+   };
+   
+   catImage = new Image("cat.png");
+   pudding = new Pet("Pudding", catImage);
+   ```
+
+   
+
 ------
 
 # My Summary for Lesson 2
@@ -1659,20 +1965,48 @@ Let's get some practice working with hoisting and `var`.
 
 | Type                                      | How its hoisted                                              | Scope          |
 | ----------------------------------------- | ------------------------------------------------------------ | -------------- |
-| `var`                                     | Variable declarations get hoisted but their assignment expressions is initialized to `undefined`. | function scope |
+| `var`                                     | Variable identifier get hoisted but their assignment expressions is initialized to `undefined`. | function scope |
 | Function declarations                     | Entire declaration including body(function definition) is hoisted. | function scope |
 | Function declarations that aren't defined | Function name is hoisted, but its definition initialized to `undefined`. | function scope |
-| Function expressions                      | Depends on how the variable is declared. Variable identifier is hoisted but the function definition may be initialized to `undefined` or in the TDZ. | depends        |
-| `let` `const`                             | in the TDZ; not defined to any initial value.                | block scope    |
-| Class declarations                        | class declarations have their identifiers made available at the top of their block-scope in an "unset" state (TDZ), until definition code is executed; class identifier is hoisted but its body(definition of the class) is not. | block scope    |
-| Class expression                          | variable identifier is hoisted but definition isn't assigned to name until expression is evaluated. | depends        |
+| Function expressions                      | Function expressions don't hoist the function body, only function declarations do.  Value of hoisted identifier depends on how the variable is declared. Variable identifier is hoisted but the function definition may be initialized to `undefined` or in the TDZ. | depends        |
+| `let` `const`                             | Variable identifier is in the TDZ; not defined to any initial value. The variable remains in the TDZ until initialization(definition) code is executed. | block scope    |
+| Class declarations                        | Class identifier is hoisted  at the top of the block scope in an "unset" state (TDZ). The class name gets hoisted, but the (body) definition of the class does not. Class declarations live in the TDZ until their definition code is executed. | block scope    |
+| Class expression                          | Variable identifier is hoisted but the class expression definition may be initialized to `undefined` or in the TDZ. | depends        |
 
 | Edge cases about hoisting                                   | How its hoisted                                              | Scope |
 | ----------------------------------------------------------- | ------------------------------------------------------------ | ----- |
-| `var` variable and function declaration have same name      | function declaration gets hoisted to the top of the program and the variable declaration gets discarded |       |
+| `var` variable and function declaration have same name      | Function declaration gets hoisted to the top of the program and the variable declaration gets discarded. |       |
 | `var` variable and function declaration have different name | Function declarations are hoisted above variable declarations. |       |
 | Functions with same names                                   | The same way during creation phase, from top to down. Last defined function overrides previous ones. |       |
-| Duplicate `var` declarations                                |                                                              |       |
+| Duplicate `var` declarations                                | `var` identifiers are hoisted and initialized to `undefined`. The variables are then assigned the value of its assignment expression when the variable statement is executed. |       |
+
+### Hoisting Rules
+
+- Function declarations are hoisted above variable names. 
+- If `var` variable and function declaration have same name, the function declaration gets hoisted to the top of the program and the variable declaration gets discarded. 
+- If functions have the same name, the last defined function is executed. 
+- If there are duplicate `var` declarations...
+- `var` variable declaration 
+
+### Other Rules to remember
+
+- Math operations on `undefined` result in `NaN`.
+
+- If you execute a variable declared with `let`, JS initializes the variable to a value of  `undefined`.
+
+  ```js
+  let a;
+  console.log(a); // undefined
+  ```
+
+  But if the variable is hoisted, the variable is still in the TDZ and is not defined yet. 
+
+  ```js
+  console.log(a);
+  let a;
+  ```
+
+  
 
 ### Edge Cases
 
@@ -1718,6 +2052,8 @@ Let's get some practice working with hoisting and `var`.
 
 - Specific rule about variables declared with `var` : the variable declaration is hoisted but the assignment expressions is initialized to `undefined`.
 
+- Duplicate `var` variable declarations means the `var` identifiers are hoisted and initialized to `undefined`. The variables are then assigned the value of its assignment expression when the variable statement is executed. 
+
 - Example 1
 
   ```js
@@ -1757,7 +2093,16 @@ Let's get some practice working with hoisting and `var`.
   var a = 2;
   
   console.log(a); // 2
-  // Explanation: no hoisting occurs here? 
+  ```
+
+  ```js
+  // hoisting
+  var a = undefined;
+  var a = undefined;
+  a = 1;
+  a = 2;
+  
+  console.log(a); // 2
   ```
 
 - Example 3
@@ -1770,14 +2115,13 @@ Let's get some practice working with hoisting and `var`.
 
   ```js
   // equivalent to
-  var a = 1;
   var a = undefined;
-  
+  var a = undefined;
+  a = 1;
   console.log(a); // 1
   a = 2;
-  // explanation?? does it just not choose the undefined value
   ```
-
+  
 - Example 4
 
   ```js
@@ -1786,4 +2130,14 @@ Let's get some practice working with hoisting and `var`.
   var a = 1;
   ```
 
+  ```js
+  // equivalent to 
+  var a = undefined;
+  console.log(a); // undefined
+  a = 1;
+  ```
   
+  
+
+
+
