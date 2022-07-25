@@ -636,7 +636,7 @@ This demonstrates that JavaScript is aware of the `foo` variable in the first sn
 
 ##### hoisting with `let` and `const`
 
-- When `let` and `const` variables are hoisted, they are not given an initial value. 
+- When `let` and `const` variables are hoisted, they are not given an initial value (not initialized!!). 
 
   - Unset variables are in the **Temporal Dead Zone**(TDZ). 
 
@@ -1927,6 +1927,24 @@ Let's get some practice working with hoisting and `var`.
    pudding = new Pet("Pudding", catImage);
    ```
 
+   You may have struggled a bit with the way that the `Image` class got hoisted. However, recall that only the class's name gets hoisted; the class doesn't get defined until the definition is executed. Thus, we have to create a variable for the class name, then later assign it a class expression.
+
+   There are other ways to depict the effect of hoisting with this code. For instance, the following code is also correct:
+
+   ```js
+   var Pet;
+   let Image;
+   var catImage;
+   var pudding;
+   
+   Pet = function(name, image) {
+     this.name = name;
+     this.image =  image;
+   };
+   
+   // omitted code...
+   ```
+
    Explanation: This is an okay representation of what actually happens during the creation phase. In this code, `Image` is now a variable declared with `let`. If we were to log the values, it shows that `Image` is in the unset TDZ, where as `catImage` and `pudding` are initialized to `undefined`.
 
    ```js
@@ -1959,7 +1977,7 @@ Let's get some practice working with hoisting and `var`.
 
 ------
 
-# My Summary for Lesson 2
+# My Summary So far
 
 ### Charts
 
@@ -2136,8 +2154,1010 @@ Let's get some practice working with hoisting and `var`.
   console.log(a); // undefined
   a = 1;
   ```
-  
-  
+
+------
+
+# Strict Mode
+
+Please take some time to read through the Launch School Gist [Modern JavaScript: Strict Mode](https://launchschool.com/gists/406ba491). Using strict mode will help you find and fix errors before they become mysterious bugs that plague your application for years.
+
+## Modern JavaScript: Strict Mode
+
+By now, you're well familiar with JavaScript's quirks, and in particular, the booby traps that arise from making simple mistakes, such as these:
+
+- You forget to declare a variable before assigning it.
+- You forget to use `this` when assigning an object property.
+- You use a number that begins with `0`.
+- You attempt to assign a value to a JavaScript keyword or value.
+
+Issues such as these, and more, can't be fixed without breaking a lot of existing code. Fortunately, we're not stuck with **sloppy mode** (an unofficial term); instead, JavaScript ES5 introduced **strict mode**, which is an optional mode that modifies the semantics of JavaScript and prevents certain kinds of errors and syntax.
+
+## What to Focus On
+
+Conceptually, strict mode is both easy to understand and use. However, you must be aware of how it changes the behavior of JavaScript and your code. There isn't much to master, but you do need to know how to use strict mode in your code. Going forward, you should try to use strict mode whenever possible.
+
+You should focus on the following:
+
+- What is strict mode? How does it differ from sloppy mode?
+- How do you enable strict mode at the global or function level?
+- Describe how code behaves under both strict and sloppy mode.
+- When is strict mode enabled automatically?
+- When should you use (or not use) strict mode?
+
+## What Does Strict Mode Do?
+
+##### Strict mode makes three significant changes to JavaScript semantics:
+
+- Strict mode eliminates some **silent errors** that occur in sloppy mode by changing them to throw errors instead. Silent errors occur when a program does something that is unintended, but continues to run as though nothing is wrong. This can lead to incorrect results or errors much later in execution that are subsequently difficult to track down.
+- Strict mode prevents some code that can inhibit JavaScript's ability to optimize a program so that it runs faster.
+- Strict mode prohibits using names and syntax that may conflict with future versions of JavaScript.
+
+##### These changes offer several benefits to JavaScript developers:
+
+- They prevent or mitigate bugs.
+- They help make debugging easier.
+- They help your code run faster.
+- They help you avoid conflicts with future changes to the language.
+
+In a few moments, we'll take a closer look at some of the specific changes that strict mode enables. We won't cover them all in detail, just the ones that you're most likely to encounter. First, though, let's learn how to enable strict mode.
+
+##### Semantic changes that occur in strict mode & their advantages
+
+- You cannot create global variables implicitly.
+  - Prevents typos.
+  - Undeclared variables will raise `ReferenceError`
+- Functions won't use the global object as their implicit context. (most significant change)
+  - Helps you spot bugs caused by context loss which result in silent errors.
+  - Prevents **silent error**: Since the implicit `this` is set to `undefined` for function invocations, will raise `TypeError` if you accidentally set variables on `undefined`, compared to setting on global object in sloppy mode.
+- Forgetting to use `this` in a method raises an error.
+  - Prevents silent error. 
+  - Results in `ReferenceError` rather than a silent error of variable being set on global object. 
+- Leading zeros on numeric integers are illegal.
+  - Leading zeros raise `ReferenceError`. 
+  - Don't want JS to interpret numbers as octal literals.
+
+## Enabling Strict Mode
+
+ **pragma**: language construct that tells a compiler, interpreter, or other translator to process the code in a different way. 
+
+- Pragmas aren't part of the language, and often use odd syntax like `"use strict"` does.
+- The `"use strict"` statement is an example of a pragma. 
+
+```js
+"use strict";
+```
+
+- Strict mode is easy to turn on either at the global level of a program or at the individual function level. To enable strict mode, add this weird bit of code to the beginning of the program file or function definition
+  - Yes, those quotes are required. They can be single or double quotes, but one way or the other, you must include them. 
+  - Note that you can't use backticks.
+  - Note also that nested functions inherit strict mode from the surrounding scope.
+  - You must specify the `"use strict"` pragma at the very beginning of the file or function. You can't enable it partway through a program or function:
+  - In particular, note that you can not enable strict mode for a block. You can only enable strict mode at the very beginning of a file or function.
+  - Once you enable strict mode, **you can't disable it later** in the same program or function.
+  - Strict mode is lexically scoped: it applies only to the code that enables it. When invoking a function that exists outside the scope - that function runs on whatever mode it originally has. 
+
+
+global strict mode
+
+```js
+"use strict";
+
+// The rest of the program. Everything from here to the end of
+// the file runs in strict mode.
+
+function foo() {
+  // strict mode is enabled here too.
+}
+
+// Strict mode is still enabled
+foo();
+```
+
+function strict mode
+
+```js
+function foo() {
+  'use strict';
+
+  // The rest of the function. Everything from here to the end of
+  // the function runs in strict mode.
+}
+
+// Strict mode is disabled unless you defined it globally.
+foo();
+```
+
+- JavaScript enables strict mode automatically within the body of a `class`; there is no way to prevent that behavior. The same thing happens with JavaScript modules, which we'll discuss in a later assignment.
+
+>  If you haven't encountered JavaScript classes yet, you will do so later.
+
+- Strict mode is lexically scoped; that is, it only applies to the code that enables it. 
+
+  - When invoking a function that exists outside the scope - that function runs on whatever mode it originally has. 
+
+  For instance:
+
+```js
+function foo() {
+  "use strict";
+  // All code here runs in strict mode
+}
+
+function bar() {
+  // All code here runs in sloppy mode
+  foo(); // This invocation is sloppy mode, but `foo` runs in strict mode
+  // All code here runs in sloppy mode
+}
+```
+
+In this example, even though `bar` runs in sloppy mode and calls `foo`, `foo` runs in strict mode. Similar behavior applies when calling a sloppy mode function from a strict mode function:
+
+```js
+function foo() {
+  // All code here runs in sloppy mode
+}
+
+function bar() {
+  "use strict";
+  // All code here runs in strict mode
+  foo(); // This invocation is strict mode, but `foo` runs in sloppy mode
+  // All code here runs in strict mode
+}
+```
+
+Here, `foo` runs in sloppy mode even though we call it from a strict mode function.
+
+------
+
+### Implicit Global Variables
+
+- Undeclared variables implicitly become global variables - properties of the global object that act like global variables. 
+
+- This feature is disabled by strict mode. Strict mode doesn't let us create variables without declaring them. 
+
+  - Disabling this feature helps prevent typos. 
+
+  - Thus, undeclared variables will raise an error
+
+    ```js
+    // ReferenceError: aVariab1eWithALongName is not defined
+    ```
+
+Anybody with even minimal experience with JavaScript is aware that JavaScript automatically creates a variable for you when you assign it to a value without first declaring the variable. For instance:
+
+```js
+function foo() {
+  bar = 3.1415;
+}
+
+foo();
+console.log(bar); // 3.1415
+```
+
+JavaScript defines undeclared variables like `bar` as global variables. No matter where your code initializes an undeclared variable, it becomes a global variable.
+
+Note that we're using the term *global variable* a little loosely here. In actuality, JavaScript defines undeclared variables as properties of the global object. Such properties act like global variables, though -- you can access them from anywhere in your program.
+
+Creating global variables in such a willy-nilly fashion can easily lead to bugs; it's far too easy to overwrite a variable that is intended to be globally available.
+
+Strict mode disables this feature by not letting you create variables without explicitly declaring them. For instance, the following program raises an error when we try to assign `bar`:
+
+```js
+"use strict";
+
+function foo() {
+  bar = 3.1415; // ReferenceError: bar is not defined
+}
+
+foo();
+console.log(bar);
+```
+
+Raising an error like this may seem like a nuisance. Why would you want to make your program raise errors? Errors prevent your program from running to completion. However, they also alert you to something that may be wrong.
+
+Suppose you do want to define `bar` as a global variable. How would you do that in strict mode? The answer is easy: declare it explicitly:
+
+```js
+"use strict";
+
+let bar;
+
+function foo() {
+  bar = 3.1415;
+}
+
+foo();
+console.log(bar); // 3.1415
+```
+
+This behavior also helps identify misspelled names. If you declare a variable with one name, then later try to reassign it with a misspelled name, sloppy mode will create a new global variable. Consider this code:
+
+```js
+let aVariableWithALongName = 2.71828;
+
+// a bunch of omitted code here
+
+aVariab1eWithALongName = 3.14159;
+console.log(aVariableWithALongName); // 2.71828; should be 3.13159
+```
+
+Can you see why that code doesn't produce the expected result? Look closely at the variable name on line 5. Look closer if you don't see it. The problem here is that the variable name on line 5 has a typo, and it's a typo that is difficult to see with most fonts: the digit `1` in the variable name should be the letter `l`. Thus, line 5 creates a global variable instead of reassigning the variable as intended. Misspellings can be especially hard to find in large programs that use the same name repeatedly. If you've been burned by this problem before, you know what we mean.
+
+Strict mode may help you identify this problem:
+
+```js
+"use strict";
+
+let aVariableWithALongName = 2.71828;
+
+// a bunch of omitted code here
+
+aVariab1eWithALongName = 3.14159; // ReferenceError: aVariab1eWithALongName is not defined
+console.log(aVariableWithALongName);
+```
+
+With the addition of strict mode, it's easy to see where the problem lies. You may still have difficulty seeing the typo, but at least you know that there's a problem with that name.
+
+Note that strict mode can't help you if both spellings are the names of declared variables:
+
+```js
+"use strict";
+
+let all = 42;
+let a11 = false;
+
+all = true; // Did we mean a11? There's no way to tell, so no error.
+```
+
+### Implicit Context In Functions
+
+- Strict mode is better than sloppy mode. 
+- Strict mode helps you spot bugs caused by context loss which result in silent errors. 
+- Since the implicit `this` is set to `undefined` for function invocations, will raise `TypeError` if you accidentally set variables on `undefined`, compared to setting on global object in sloppy mode which results in a **silent error**. 
+- This is the most significant change to JS semantics. 
+
+Consider the following code:
+
+```js
+let obj = {
+  a: 5,
+  go() {
+    this.a = 42;
+  },
+};
+
+let doIt = obj.go;
+doIt(); // invoking go as regular function call
+console.log(obj.a); // 5
+```
+
+In sloppy mode, this code fails to set `obj.a` to `42` since we invoke the `go` method with function call syntax. Thus, the implicit execution context, `this`, is set to the global object.
+
+In strict mode, using function call syntax on a method sets `this` set to `undefined`. Thus, `this.a` raises an exception:
+
+```js
+"use strict";
+
+let obj = {
+  a: 5,
+  go() {
+    this.a = 42; // TypeError: Cannot set property 'a' of undefined
+  },
+};
+
+let doIt = obj.go;
+doIt();
+console.log(obj.a); // 5
+```
+
+This change to JavaScript's semantics may be the most significant change of all under strict mode. It probably won't break your code, but it should help you spot bugs caused by context loss much sooner.
+
+### Forgetting to Use `this`
+
+Consider the following code:
+
+```js
+function Child(age) {
+  this.age = age;
+};
+
+Child.prototype.setAge = function(newAge) {
+  age = newAge;
+}
+
+let leigh = new Child(5);
+leigh.setAge(6);
+console.log(leigh.age); // 5; expected 6
+```
+
+In this code, we forgot to use `this` on line 6 when we tried to assign a new age to the object. Instead of updating the `age` instance property on `leigh`, though, we created a global variable named `age`. Once again, strict mode comes to the rescue:
+
+```js
+"use strict";
+
+function Child(age) {
+  this.age = age;
+};
+
+Child.prototype.setAge = function(newAge) {
+  age = newAge; // ReferenceError: age is not defined
+}
+
+let leigh = new Child(5);
+leigh.setAge(6);
+console.log(leigh.age);
+```
+
+### Leading Zeros
+
+- Strict mode prevents numbers from beginning with `0` because don't want JS to interpret numbers as octal number. 
+
+-  Strict mode also prevents any number literal from beginning with `0` or `-0` except for `0` itself (or `0` with a decimal component, e.g., `0.123`).
+
+- Throws error if we use leading zeros.
+
+  ```js
+  // SyntaxError: Octal literals are not allowed in strict mode.
+  ```
+
+If you use a literal integer that begins with `0` but doesn't contain the digits `8` or `9`, sloppy mode JavaScript interprets it as an octal number:
+
+```js
+console.log(1234567);  // 1234567
+console.log(01234567); // 342391 (the same as octal 0o1234567)
+```
+
+This behavior is often undesirable, though its less troublesome now that modern versions of JavaScript default to decimal when using `parseInt`. In some older versions, `parseInt("01234567")` would return `342391`, which could be a problem if the string came from an external source (such as the keyboard).
+
+With strict mode, numbers that look like octal numbers raise an error:
+
+```js
+"use strict";
+
+console.log(1234567);   // 1234567
+console.log(0);         // This is okay
+console.log(0.123);     // So is this
+console.log(-0.123);    // So is this
+console.log(01234567);  // SyntaxError: Octal literals are not allowed in strict mode.
+console.log(089);       // SyntaxError: Numbers can't begin with 0
+console.log(01.23);     // SyntaxError: Numbers can't begin with 0
+console.log(-01234567); // SyntaxError: Octal literals are not allowed in strict mode.
+console.log(-089);      // SyntaxError: Numbers can't begin with 0
+console.log(-01.23);    // SyntaxError: Numbers can't begin with 0
+```
+
+Note that strict mode also prevents any number literal from beginning with `0` or `-0` except for `0` itself (or `0` with a decimal component, e.g., `0.123`).
+
+### Other Strict Mode Differences
+
+In addition to the changes described above, strict mode:
+
+- (*) prevents you from using function declarations in blocks.
+- (*) prevents declaring two properties with the same name in an object.
+- prevents declaring two function <u>parameters</u> with the same name.
+- prevents using some newer **reserved keywords**, such as `let` and `static`, as variable names.
+- prevents you from using the `delete` operator on a variable name.
+- forbids binding of `eval` and `arguments` in any way.
+- disables access to some properties of the `arguments` object in functions.
+- disables the `with` statement, a statement whose use is not recommended even in sloppy mode.
+
+(*) These prohibitions were in effect for ES5, but both are now allowed. However, we recommend that you avoid declaring functions inside blocks and declaring multiple properties with the same name. ESLint will flag these problems.
+
+## When Should I Use Strict Mode?
+
+Use strict mode in any new code that you write. If you're adding new functions to an old codebase, it's safe to use function-level strict mode in the new functions, and you probably should do so. However, if you're not creating a new function in that old codebase, you probably shouldn't try to use strict mode. The changes in semantics, particularly those having to do with variable declarations, `this`, and silent failures, can easily break code that otherwise works well.
+
+For brevity, most of the shorter examples in the rest of this course won't show the `"use strict";` pragma. We'll show the pragma in some longer examples as well as any code where the pragma is needed to run properly. You, however, should use the pragma in your code so you can get in the habit of using it.
+
+## Practice Problem
+
+If you haven't completed JS130 or JS225 yet, you may have a bit of trouble with this problem. Do the best you can, but don't spend a huge amount of time trying to fix everything.
+
+The following code runs in sloppy mode:
+
+```js
+SUITS = ["Clubs", "Diamonds", "Hearts", "Spades"];
+RANKS = ["2", "3", "4", "5", "6", "7", "8", "9",
+         "10", "Jack", "Queen", "King", "Ace"];
+
+function createDeck() {
+  allCards = () => {
+    return this.SUITS.reduce((deck, suit) => {
+      this.RANKS.forEach(rank => deck.push(`${rank} of ${suit}`));
+      return deck;
+    }, []);
+  };
+
+  deck = allCards();
+  shuffle(deck);
+
+  return deck;
+}
+
+function shuffle(deck) {
+  for (counter = 0; counter < 0400; counter += 1) {
+    randomIndex1 = randomCardIndex();
+    randomIndex2 = randomCardIndex();
+    tempCard = deck[randomIndex1];
+    deck[randomIndex1] = deck[randomIndex2];
+    deck[randomIndex2] = tempCard;
+  }
+
+  function randomCardIndex() {
+    return Math.floor(Math.random() * this.deck.length);
+  }
+}
+
+console.log(createDeck());
+```
+
+Rewrite this code to run in strict mode.
+
+Solution
+
+```js
+"use strict";
+
+const SUITS = ["Clubs", "Diamonds", "Hearts", "Spades"];
+const RANKS = ["2", "3", "4", "5", "6", "7", "8", "9",
+               "10", "Jack", "Queen", "King", "Ace"];
+
+function createDeck() {
+  const allCards = () => {
+    return SUITS.reduce((deck, suit) => {
+      RANKS.forEach(rank => deck.push(`${rank} of ${suit}`));
+      return deck;
+    }, []);
+  };
+
+  let deck = allCards();
+  shuffle(deck);
+
+  return deck;
+}
+
+function shuffle(deck) {
+  for (let counter = 0; counter < 256; counter += 1) {
+    let randomIndex1 = randomCardIndex();
+    let randomIndex2 = randomCardIndex();
+    let tempCard = deck[randomIndex1];
+    deck[randomIndex1] = deck[randomIndex2];
+    deck[randomIndex2] = tempCard;
+  }
+
+  function randomCardIndex() {
+    return Math.floor(Math.random() * deck.length);
+  }
+}
+
+console.log(createDeck());
+```
+
+We had to make several changes:
+
+- Add the `"use strict"` pragma.
+- Use `let` or `const` to declare all variables.
+- Remove `this` from `this.RANKS`, `this.SUITS`, and `this.deck`.
+
+If the original code didn't make you recoil in horror, it should have. Between the lack of variable declarations, the misuse of `this`, and the global `deck` variable, that code was a mess.
+
+## Summary
+
+In this assignment, we introduced strict mode and compared it with the traditional JavaScript semantics unofficially known as **sloppy** mode. You should use strict mode in any new code or functions that you write, but avoid using it when you're merely updating old code.
+
+Semantic changes that occur in strict mode
+
+In our discussion, we looked at some of the semantic changes that occur when using strict mode. In particular:
+
+- You cannot create global variables implicitly.
+- Functions won't use the global object as their implicit context.
+- Forgetting to use `this` in a method raises an error.
+- Leading zeros on numeric integers are illegal.
+
+Strict mode makes other changes as well, but the above changes are the most important for most JavaScript developers.
+
+Strict mode gets enabled automatically inside ES6 classes.
+
+In the next assignment, we'll talk about closure.
+
+------
+
+# Closures
+
+In this assignment, we'll learn about a crucial concept in JavaScript: closures. 
+
+**Closures** let a function access a variable that was in lexical scope at the function's definition point even when that variable is no longer in scope. 
+
+You may not realize it, but you've been using closures every time you've defined a function that accesses a variable from its outer scope.
+
+## What to Focus On
+
+Mastery of closures is essential. The concept is one of the most important in JavaScript. Once you have a firm grasp on variable scope, closures are conceptually simple. In practice, though, they can be tricky, especially if you think of them as a runtime feature. Technically, they are a mix of lexical and runtime features, but it's easier to understand them as a purely lexical feature for now. They're an artifact of the code's structure, not how the code runs.
+
+You should focus on the following:
+
+- What is a closure?
+- What is in a closure?
+- When is a closure created?
+- What is the relationship between closures and scope?
+- What do we mean when we say that closures are defined lexically?
+- What is partial function application?
+
+## A Brief Review of Scope
+
+Before we dive into closures, let's take a few minutes to review scope. You may also want to review the More About Scope assignment earlier in this lesson.
+
+By now, you're well-acquainted with scope. It's nearly impossible to program in any language without understanding how scope works in that language. You have to know what variables you can access from any point in your code, and perhaps more importantly, which ones you can't.
+
+As you may recall, there are different terms we use when discussing scope. We're going to focus on lexical scope in this section.
+
+Back in the [JS101 assignment on Variable Scope](https://launchschool.com/lessons/64655364/assignments/7c0087dd), we learned that code in a function's body could access variables declared in the function's surrounding scope. That is, a function has access to its **outer scope**. We also learned that variables declared within a function's body aren't accessible outside the function. Code that isn't part of the function body can't access variables declared in the function's **inner scope**.
+
+Together, these behaviors mean that a function can access any variable in its inner or outer scope. This behavior follows lexical rules based on the structure of the code; you can see at a glance whether a variable is in scope at some point in the program:
+
+```js
+let foo0 = 1;
+console.log(foo0);        // in scope
+// console.log(foo1);     // not in scope; would fail
+// console.log(foo2);     // not in scope; would fail
+// console.log(foo3);     // not in scope; would fail
+
+function bar1() {
+  let foo1 = 2;
+  console.log(foo0);      // in scope
+  console.log(foo1);      // in scope
+  // console.log(foo2);   // not in scope; would fail
+  // console.log(foo3);   // not in scope; would fail
+
+  function bar2() {
+    let foo2 = 3;
+    console.log(foo0);    // in scope
+    console.log(foo1);    // in scope
+    console.log(foo2);    // in scope
+    // console.log(foo3); // not in scope; would fail
+  }
+
+  function bar3() {
+    let foo3 = 4;
+    console.log(foo0);    // in scope
+    console.log(foo1);    // in scope
+    // console.log(foo2); // not in scope; would fail
+    console.log(foo3);    // in scope
+  }
+}
+```
+
+In this example, we can see that `foo0` in the outermost scope is available everywhere in the program, including the nested `bar2` and `bar3` functions; however, the remaining variables are not accessible. Similarly, `foo1` is available in the inner scopes of `bar1`, `bar2`, and `bar3`, but not from the outermost scope. Finally, `foo2` is available inside `bar2` and `foo3` is available inside `bar3`, but neither variable is accessible elsewhere.
+
+##### Functions are also variables and have scope
+
+Keep in mind that `bar1`, `bar2`, and `bar3` are variables as well. The scope of `bar1` is the same as `foo0`. Meanwhile, `bar2` and `bar3` have the same scope as `foo1`. That is, `bar1` is accessible everywhere, just like `foo0` is accessible everywhere. Similarly, both `bar2` and `bar3` are accessible from anywhere inside `bar1`, `bar2`, or `bar3`, just like `foo1` is accessible anywhere in `bar1`, `bar2`, or `bar3`. The idea that you can access a function's name from within that function may seem a little odd at first, but recall that functions can call themselves via [recursion](https://launchschool.com/books/javascript/read/loops_iterating#recursion). Thus, it makes sense that `bar1`, for instance, is in scope in the inner scope of `bar1`.
+
+Note that hoisting plays a part in determining the scope of names. In our example, "bar2" and "bar3" are in scope everywhere inside "bar1" since function declarations get hoisted to the top of the enclosing scope. Since JavaScript hoists variable declarations, the name would still be in scope had we used function expressions. However, they would be unusable, uninitialized variables:
+
+```js
+// function declaration
+function go1() {
+  go2(); // go2 is in scope, initialized, and usable
+  function go2() {
+    console.log(go2);
+  }
+}
+```
+
+```js
+// variable declaration with let
+function go1() {
+  go2(); // go2 is in scope but uninitialized and unusable --> throws ReferenceError
+	// ReferenceError: Cannot access 'go2' before initialization
+  let go2 = function() {
+    console.log(go2);
+  }
+}
+```
+
+Thus, the second example above throws an error even though `go2` is in scope.
+
+```js
+// variable declaration with let
+function go1() {
+  go2(); // go2 is in scope but initialized to undefined --> throws a TypeError
+  // TypeError: go2 is not a function
+  var go2 = function() {
+    console.log(go2);
+  }
+}
+```
+
+## Closures
+
+Why spend so much time talking about scope when we're supposed to be learning about closures? What is a closure anyway?
+
+The reason behind the discussion on scope is that closures and lexical scope are intimately related.
+
+- Closures use the lexical scope in effect at a function's definition point to determine what variables that function can access. 
+- What variables are in scope during a function's execution depend on the closure formed by the function's <u>definition.</u> 
+
+It's somewhat circular reasoning, but it's impossible to separate the two.
+
+[MDN](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Closures) defines **closure** as "the combination of a function and the lexical environment within which that function was [defined]." You can think of closure as a function combined with any variables from its lexical scope that the function needs. In other words, if a function uses a variable that is not declared or initialized in that function, then that variable will be part of the closure (provided it exists).
+
+> Note that the MDN definition of closure uses the term "declared" where we say "defined." Since closure occurs with both function declarations and function expressions, the term "declared" as used on MDN is incorrect. Please use our modified version of the quote.
+
+Closures are created when you define a function or method. The closure essentially *closes over* its environment -- what's in lexical scope. In effect, the function definition and all the identifiers in its lexical scope become a single entity called a closure. When the function is invoked, it can access any variables it needs from that environment. That is, the function can use variables from the lexical scope where the function was defined. **Even if those variables aren't in the lexical scope where you invoke the function, it can still access them.**
+
+Note that closures only close over the variables that the function needs. If the function uses the variable `foo`, but the outer scope contains both `foo` and `bar`, only `foo` will be included in the closure.
+
+Wait a minute. How can you use variables that aren't in scope? Doesn't scope govern what variables you can use? Yes, that's true, but it's a little imprecise. When we say that a variable is no longer in scope, we mean that it isn't in scope at the point in your program where you invoke the function. However, closure and scope are lexical concepts. Where you invoke a function is unimportant; where you define the function is. A closure includes the variables it needs from the scope where you defined the function. Those variables may not be in scope when you invoke the function, but they're still available to the function.
+
+##### Summary
+
+Circular Reasoning
+
+- Closures use the lexical scope in effect at a function's definition point to determine what variables that function can access. 
+- What variables are in scope during a function's execution depend on the closure formed by the function's <u>definition.</u> 
+
+Basically, scope uses closure and closure uses lexical scope. 
+
+Definition
+
+- **Closure**: combination of function and lexical environment within which the function was [defined] in. 
+- Closures are created when you define a function or method. 
+- The closure essentially *closes over* its environment -- what's in lexical scope. 
+  - The function definition and all the identifiers in its lexical scope become a single entity called a closure.
+  - Note that closures only close over the variables that the function needs. If the function uses the variable `foo`, but the outer scope contains both `foo` and `bar`, only `foo` will be included in the closure.
+  - A closure includes the variables it needs from the scope **<u>where you defined</u>** the function. Those variables may not be in scope when you invoke the function, but they're still available to the function.
+- When the function is invoked, it can access any variables it needs from that environment. That is, the function can use variables from the lexical scope where the function was defined. 
+- **Even if those variables aren't in the lexical scope where you invoke the function, it can still access them.**
+- It's important to remember that closure definitions are purely lexical. Closures are based on your program's structure, not by what happens when you execute it. Even if you never call a particular function, that function forms a closure with its surrounding scope.
+
+
+- Functions that return functions are perhaps the most powerful feature of closure in JavaScript.
+
+- Returning a function allows for private variables --> data protection. 
+
+##### How can we use variables that aren't in scope?
+
+- When we say that a variable is no longer in scope, we mean that it isn't in scope at the point in your program where you invoke the function. 
+- However, closure and scope are lexical concepts. Where you invoke a function is unimportant; <u>where you define</u> the function is. 
+- A closure includes the variables it needs from the scope where you defined the function. Those variables may not be in scope when you invoke the function, but they're still available to the function.
+
+### A Helpful Mental Model
+
+Let's try to describe a more helpful mental model. 
+
+Closures are defined when a function is defined. 
+
+- When you define a function, JavaScript finds all of the variable names it needs from the lexical scope that contains the function definition. 
+- It then takes those names and places them inside a special **"envelope" object** that it attaches to the function object. 
+- Each name in the envelope is a <u>pointer to the original variable</u>, not the value it contains.
+- When a function encounters a variable name during execution, JS first checks for local variables (variables in local scope ) by a given name, then it looks to the closure if it can't find it. 
+  - Looking into closure means it peeks to see whether the variable is mentioned there. 
+  - If it is, JS can follow the <u>pointer</u> and get the current value of the variable. 
+  - Value of variables are subject to change based on what function invocation does with it! 
+
+Pointer to variables
+
+- JS can internally point to variables.
+- JS needs a pointer to variable so it can see changes made to what the variable references.
+
+"Envelope" is not a term that you're likely to encounter elsewhere. It's just our word for how this mental model of closure works. We won't use it after the next assignment.
+
+The phrase "pointer to the ... variable" may seem odd. We usually think of variables as pointers to objects, not as something that we can point to. We can point to the object that a variable references, but we can't point to the variable. That's the way JavaScript is defined. However, internally, [JavaScript] can do anything it needs to do, including pointing to variables. In this case, it needs a pointer to the variable so that it can see any changes made to what the variable references or contains:
+
+```js
+let numbers = [1, 2, 3];
+
+function printNumbers() {
+  console.log(numbers);
+}
+
+printNumbers(); // => [ 1, 2, 3 ]
+
+numbers = [4, 5];
+printNumbers(); // => [ 4, 5 ]
+```
+
+If the closure pointed to the value instead of the variable, it can't tell that we reassigned `numbers` on line 9. This is also true for primitive values: we need a pointer to the variable so the closure can see any changes.
+
+```js
+let number = 42;
+
+function printNumber() {
+  console.log(number);
+}
+
+printNumber(); // => 42
+
+number = 3.1415;
+printNumber(); // => 3.1415
+```
+
+We'll return to this concept in a few minutes.
+
+When a function encounters a variable name during execution, it first looks inside its local scope for that name. If it can't find the name, it peeks inside the envelope to see whether the variable is mentioned there. If it is, JavaScript can follow the pointer and get the current value of the variable. 
+
+In fact, this is how scope works in JavaScript: it first checks for local variables by a given name, then it looks to the closure if it can't find it. All that stuff about looking at outer scopes until you reach the global scope all happens when the closure is defined.
+
+##### What about variables that are in scope when you invoke a function? 
+
+- Can the function access them? If those variables were in scope at the definition point, then yes, it can. 
+- However, if those variables weren't in scope when you <u>defined</u> the function, then the function cannot access them. They're not listed in the envelope since it was created when the function was defined. 
+- Only variables that are in scope when you define the function are available to the function.
+
+##### Diagram
+
+Karis wrote a very short article on the envelope model of closure, complete with helpful diagrams. [Check it out!](
+
+![img](https://miro.medium.com/max/1400/1*Hr7NK9J-74rv4_TRSTAxag.png)
 
 
 
+### Examples of Closure
+
+**Invoke a function in a way that lets it access something that isn't in scope**. 
+
+Okay, then, how can we invoke a function in a way that lets it access something that isn't in scope? Recall that, in JavaScript, functions are first-class objects. We can assign them to variables, pass them as function arguments, and use them as function return values. That means that we don't have to execute a function in the same scope in which we defined it; we can call it from a completely different part of the program. This is easiest to see with a higher-order function that returns a function object. For instance:
+
+##### Example: higher- order function that returns a function object
+
+Functions that return functions are perhaps the most powerful feature of closure in JavaScript.
+
+```js
+function foo() {
+  let name = "Pete";
+  return function() {
+    console.log(name);
+  };
+}
+
+let printPete = foo();
+printPete(); // Pete
+```
+
+In this example, we first call `foo` and capture its return value, a function that logs the value of the `name` variable defined in the lexical scope of `foo`. At a minimum, the closure formed by the returned function's definition contains a pointer to `name` in its envelope. That pointer means that `name`'s value won't get discarded when `foo` is done.
+
+Though `name` is out of scope when `foo` finishes, the returned function has an envelope that contains a pointer to `name`. Thus, the function can still follow the pointer to the original variable, and find its current value, and that lets `printPete()` print `Pete'.
+
+##### Simple example: 
+
+function accessing variable from surrounding scope 
+
+- Is an example of closure but not a risky one because many developers see this as a pure scoping issue.
+- Even at Launch School, we may not accept an example that can be explained entirely with scope. Be safe and use a more complete example, one that brings closure into it.
+
+Let's consider a simpler example of closure:
+
+```js
+let counter = 0;
+
+function incrementCounter() {
+  counter += 1;
+}
+
+incrementCounter();
+incrementCounter();
+console.log(counter); // 2
+```
+
+At first glance, this code seems to illustrate variable scope: a function can access a variable in its surrounding scope. However, the reason why it can do that is that the function definition forms a closure that includes the variables it needs from the outer scope: namely, `counter`. Thus, `incrementCounter` can access and update the `counter` variable.
+
+If a job interviewer asks you to provide an example of closure, this simple example may be a risky choice. Many JavaScript developers see this as a pure scoping issue. However, it really is closure at work, just in an unfamiliar context for some developers. If you use an example like this one, you may be challenged on it. You will have to defend your statement that it really is a closure. If your explanation isn't accepted, you may be in a spot of trouble.
+
+Even at Launch School, we may not accept an example that can be explained entirely with scope. Be safe and use a more complete example, such as the next one below. There's no way to explain the behavior in that code by relying entirely on scope. You have to bring closure into it.
+
+A closure is not a snapshot of the program state. As we saw a little earlier, each time you invoke a function, it sees the most recent values of the variables in its envelope. Thus, if a variable's value changes, the closure ensures that the function sees the new value, not the old one. Thus, `incrementCounter` increments the `counter` variable from `1` to `2` during its second invocation.
+
+In most programs, you would probably return the `incrementCounter` function from another function:
+
+```js
+function makeCounter() {
+  let counter = 0;
+
+  return function() {
+    counter += 1;
+    return counter;
+  }
+}
+
+let incrementCounter = makeCounter();
+console.log(incrementCounter()); // 1
+console.log(incrementCounter()); // 2
+```
+
+Note that `counter` is now a private variable in the sense that we can not access it directly. The only way to determine its value is to call the function that `makeCounter` returns, but that also increments the variable. This form of data protection is a big reason why returning a function from another function is so powerful.
+
+What happens if we create two functions from `makeCounter`?
+
+```js
+let incrementCounter1 = makeCounter();
+let incrementCounter2 = makeCounter();
+
+console.log(incrementCounter1()); // 1
+console.log(incrementCounter1()); // 2
+console.log(incrementCounter1()); // 3
+
+console.log(incrementCounter2()); // 1
+console.log(incrementCounter2()); // 2
+
+console.log(incrementCounter1()); // 4
+```
+
+As you can see, each of the closures gets its own copy of `counter`. This happens because each invocation of `makeCounter` creates a new local variable named `counter`. Thus, each returned closure has its own variable.
+
+Let's look at a more subtle example. What happens if we return two functions that close over the same variable at the same time?
+
+```js
+function makeCounter() {
+  let counter = 0;
+
+  const fun1 = function() {
+    counter += 1;
+    return counter;
+  }
+
+  const fun2 = function() {
+    counter += 2;
+    return counter;
+  }
+
+  return [fun1, fun2];
+}
+
+let funs = makeCounter();
+let fun1 = funs[0];
+let fun2 = funs[1];
+console.log(fun1()); // 1
+console.log(fun2()); // 3
+```
+
+Here, both of the functions returned by `makeCounter` close over the same `counter` variable, so they share it. On line 20, we call the first function, which increments `counter` by 1. On line 21, we increment that same counter by 2, so the result is 3.
+
+Let's look at one final example:
+
+```js
+let oddNumbers = [];
+let array = [1, 2, 3, 4, 5, 6, 7];
+array.forEach(number => {
+  if (number % 2 === 1) {
+    oddNumbers.push(number);
+  }
+});
+```
+
+You've seen code like this before. It may not be obvious, but you're using closure when you pass the callback function to `Array.prototype.forEach`. The callback gets invoked somewhere in the heart of JavaScript's implementation of `forEach`. However, it still has access to the `oddNumbers` array since the callback forms a closure with its surrounding scope. The closure also provides access to `array` though the callback doesn't use it in this example.
+
+It's important to remember that closure definitions are purely lexical. Closures are based on your program's structure, not by what happens when you execute it. Even if you never call a particular function, that function forms a closure with its surrounding scope.
+
+##### Functions that return functions are perhaps the most powerful feature of closure in JavaScript.
+
+- Returning a function allows for private variables --> data protection. 
+
+## Partial Function Application
+
+In the last section, we saw several ways in which closures play a part in our programs. Let's take a brief look at a more useful application of closures.
+
+Consider the following code:
+
+```js
+function add(first, second) {
+  return first + second;
+}
+
+function makeAdder(firstNumber) {
+  return function(secondNumber) {
+    return add(firstNumber, secondNumber);
+  };
+}
+
+let addFive = makeAdder(5);
+let addTen = makeAdder(10);
+
+console.log(addFive(3));  // 8
+console.log(addFive(55)); // 60
+console.log(addTen(3));   // 13
+console.log(addTen(55));  // 65
+```
+
+In this program, the `makeAdder` function creates and returns a new function that, in turn, calls and returns the return value of calling `add` with two arguments. What's interesting here is that we define the first number when we call `makeAdder`. We don't provide the second number until later when we call the function that `makeAdder` returns.
+
+A function such as `makeAdder` is said to use **partial function application**. It applies some of the function's arguments (the `add` function's `first` argument here) when called, and applies the remaining arguments when you call the returned function. Partial function application refers to the creation of a function that can call a second function with fewer arguments than the second function expects. The created function applies the remaining arguments.
+
+Partial function application is most useful when you need to pass a function to another function that won't call the passed function with enough arguments. It lets you create a function that fills in the gaps by applying the missing elements. For instance, suppose you have a function that downloads an arbitrary file from the Internet. The download may fail, so the function also expects a callback function that it can call when an error occurs:
+
+```js
+function download(locationOfFile, errorHandler) {
+  // try to download the file
+  if (gotError) {
+    errorHandler(reasonCode);
+  }
+}
+
+function errorDetected(url, reason) {
+  // handle the error
+}
+
+download("https://example.com/foo.txt", /* ??? */);
+```
+
+Our error handling function, `errorDetected`, takes two arguments, but `download` only passes one argument to the error handler. Suppose the `download` function is part of a 3rd party library that you can't modify. You can turn to partial function application to get around the single-argument limitation:
+
+```js
+function makeErrorHandlerFor(locationOfFile) {
+  return function(reason) {
+    errorDetected(locationOfFile, reason);
+  };
+}
+
+let url = "https://example.com/foo.txt";
+download(url, makeErrorHandlerFor(url));
+```
+
+The `download` function now calls the partially applied function returned by `makeErrorHandlerFor`, and `errorDetected` gets both arguments it needs.
+
+In this simple example, partial function application may be overkill. However, if you need to use `errorDetected` in several different locations, partial function application can save you a lot of time and effort. You don't have to create an error handler function for each situation.
+
+Rather than creating a `makeErrorHandlerFor` function, you can use `bind` to perform partial function application. In most cases, `bind` is all you need.
+
+```js
+let url = "https://example.com/foo.txt";
+download(url, errorDetected.bind(null, url));
+```
+
+You may encounter the term **partial function** as an alternative to *partial function application* or *partially applied function*. In some cases, this usage may refer to partial function application, but it can also refer to a completely different and unrelated concept. Try not to get confused by this verbal similarity.
+
+### Recognizing Partial Function Application
+
+Partial function application requires a reduction in the **number of arguments** you have to provide when you call a function. If the number of arguments isn't reduced, it isn't partial function application. For instance, consider this code:
+
+```js
+function makeLogger(identifier) {
+  return function(msg) {
+    console.log(identifier + ' ' + msg);
+  };
+}
+```
+
+Here, `console.log` takes exactly one argument and the function returned by `makeLogger` also takes exactly one argument. Since there is no difference in the number of arguments, we don't have partial function application.
+
+However, if we change the code to use two arguments when calling `console.log`, we do have partial function application:
+
+```js
+function makeLogger(identifier) {
+  return function(msg) {
+    console.log(identifier, msg);
+  };
+}
+```
+
+In this case, we only need to pass one argument to the function returned by `makeLogger`. That function, in turn, calls `console.log` with two arguments, so it is partial function application.
+
+## What are Closures Good For?
+
+We've seen several examples in this assignment, including callbacks, partial function application, and creating private data. In addition, here are some other things made possible by closures: we'll meet most (but not all) of these later in the curriculum:
+
+- Currying (a special form of partial function application)
+- Emulating private methods
+- Creating functions that can only be executed once
+- Memoization (avoiding repetitive resource-intensive operations)
+- Iterators and generators
+- The module pattern (putting code and data into modules)
+- Asynchronous operations
+
+## Optional Reading
+
+If you're feeling a little uncertain about closures, we've found an article that may help. In [I never understood JavaScript closures](https://medium.com/dailyjs/i-never-understood-javascript-closures-9663703368e8), the author walks you through all the steps in understanding closure.
+
+The author claims that his final example is partial function application, but it doesn't quite fit with our definition. You can ignore that.
+
+The author also uses the term "backpack" for what we call an envelope.
+
+Also, he sometimes uses *argument* and *parameter* interchangeably.
+
+## Summary
+
+In this assignment, we've introduced the crucial concept of closures. Though closures and scope are distinct concepts, closures are entangled intimately with scope. You can understand scope well enough to use it without understanding closures, but a complete understanding requires understanding both.
+
+We also learned about partial function application, a technique that can be useful when you need to call a function many times with the same arguments.
+
+In our next assignment, we'll give you some practice working with closures. Afterward, we'll learn how to leverage closures to define private data and methods in objects.

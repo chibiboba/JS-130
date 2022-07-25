@@ -1,22 +1,20 @@
-function Pet(name, image) {
-  this.name = name;
-  this.image = image;
-}
-console.log(catImage);
-console.log(Image);
-let Image;
-var catImage;
-var pudding;
+function makeCounter() {
+  let counter = 0;
 
-Pet.prototype.walk = function () {
-  console.log(`${this.name} is walking.`);
-};
-
-Image = class {
-  constructor(file) {
-    this.file = file;
+  return function () {
+    counter += 1;
+    return counter;
   }
-};
+}
 
-catImage = new Image("cat.png");
-pudding = new Pet("Pudding", catImage);
+let incrementCounter1 = makeCounter();
+let incrementCounter2 = makeCounter();
+
+console.log(incrementCounter1()); // 1
+console.log(incrementCounter1()); // 2
+console.log(incrementCounter1()); // 3
+
+console.log(incrementCounter2()); // 1
+console.log(incrementCounter2()); // 2
+
+console.log(incrementCounter1()); // 4
