@@ -1,20 +1,11 @@
-function makeCounter() {
-  let counter = 0;
-
-  return function () {
-    counter += 1;
-    return counter;
-  }
+function emulateBind(context, func) {
+  return () => func.call(context);
 }
 
-let incrementCounter1 = makeCounter();
-let incrementCounter2 = makeCounter();
+let obj = {};
+let boundFunc = emulateBind(obj, function () {
+  this.foo = "bar";
+});
 
-console.log(incrementCounter1()); // 1
-console.log(incrementCounter1()); // 2
-console.log(incrementCounter1()); // 3
-
-console.log(incrementCounter2()); // 1
-console.log(incrementCounter2()); // 2
-
-console.log(incrementCounter1()); // 4
+boundFunc();
+console.log(obj); // { foo: 'bar' }

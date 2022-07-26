@@ -2717,7 +2717,7 @@ There are two ways to set execution context when calling a function or method
 
 There are many ways that JS provides an implicit execution context. 
 
-- If `this` is <u>outside a function definition</u>, keyword `this` is bound to the global object. Which means that the implicit execution context is the global object. (even in stric)
+- If `this` is <u>outside a function definition</u>, keyword `this` is bound to the global object. Which means that the implicit execution context is the global object. (even in strict mode)
 
   ```js
   // in strict mode
@@ -2729,6 +2729,8 @@ There are many ways that JS provides an implicit execution context.
   ```
 
 - If `this`  is <u>used as part of a function definition</u>, and the execution context depends on how the function is invoked, not how or where the function is defined.
+
+  - Context binding is not based on lexical scoping rules that variables use. `this` depends on **how** a function or method is invoked. 
 
   - **Regular function calls** (**standalone** function) use <u>global object</u> as <u>implicit</u> execution context, unless in strict mode, it uses <u>undefined.</u>
 
@@ -3250,6 +3252,7 @@ hi.greet.call(bye); // 'bye' -> uses bye as explicit execution context
   - Once a function's context gets bound using `bind`, its context can't be changed, even with `call` and `apply`
   - Hard binds a function to an explicit execution context. 
   - We have to call on the new function using `()`. 
+  - Full definition: The **`bind()`** method creates a new function that, when called, has its `this` keyword set to the provided value, with a given sequence of arguments preceding any provided when the new function is called. 
 
 - Syntax
 
