@@ -313,7 +313,7 @@ let pets = {
 #### Compact Method Syntax
 
 - Using functions as object values (methods) is so common that there's short hand syntax called compact syntax for it. 
-- You can omit the `:` and the `function` keyword and use parenthesis to denote a method. There is a subtle difference between these two syntaxes, however. We'll cover that later when we talk about prototypes(??)
+- You can omit the `:` and the `function` keyword and use parenthesis to denote a method. 
 
 ```JS
 let obj = {
@@ -326,6 +326,49 @@ let obj = {
   },
 };
 ```
+
+- There is a subtle difference between these two syntaxes, however. We'll cover that later when we talk about prototypes(??)
+
+  - [reference](https://stackoverflow.com/questions/50963556/es6-concise-methods-and-non-concise-methods-in-object-literals)
+
+  - One notable difference is that *concise* methods can utilize the [`super`](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Operators/super) keyword and the *non-concise* (aka: *traditional*) methods cannot. This becomes pertinent when changing an object(s) prototype to aid *inheritance*.
+
+  - To demonstrate this, consider the following gist:
+
+    Example
+
+    ```js
+    const frenchPerson = {
+      speak() {
+        return 'Bonjour';
+      }
+    };
+    
+    const englishPerson = {
+      speak() {
+        return 'Hello';
+      }
+    };
+    
+    const multilinguist = {
+      speak() {
+        return `${super.speak()}, Hola`
+      }
+    };
+    
+    console.log(frenchPerson.speak()) // -> "Bonjour"
+    console.log(englishPerson.speak()) // -> "Hello"
+    
+    Object.setPrototypeOf(multilinguist, frenchPerson);
+    console.log(Object.getPrototypeOf(multilinguist) === frenchPerson); // true
+    
+    console.log(multilinguist.speak()); // -> "Bonjour, Hola"
+    
+    Object.setPrototypeOf(multilinguist, englishPerson);
+    console.log(Object.getPrototypeOf(multilinguist) === englishPerson); // true
+    
+    console.log(multilinguist.speak()); // -> "Hello, Hola
+    ```
 
 - ------
 

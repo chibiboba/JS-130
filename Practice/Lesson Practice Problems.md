@@ -229,23 +229,21 @@ Let's get some practice working with closures.
 
 5. Write a function named `makeMultipleLister` that you can call with a number as an argument. The function should return a new function that, when invoked, logs every positive integer multiple of that number less than 100. It should work like this:
 
-   Copy Code
-
    ```js
-   let lister = makeMultipleLister(17);
+let lister = makeMultipleLister(17);
    lister();
    ```
-
+   
    **Output**
 
    ```plaintext
-   17
+17
    34
    51
    68
    85
    ```
-
+   
    Show Solution
 
 6. Write a program that uses two functions, `add` and `subtract`, to manipulate a running total. When you invoke either function with a number, it should add or subtract that number from the running total and log the new total to the console. It should work like this:
@@ -319,3 +317,196 @@ Let's get some practice working with closures.
     ```
 
     Show Solution
+
+------
+
+# Practice Problems: Closures & private data
+
+[Reference](https://launchschool.com/lessons/43f23069/assignments/3df10c91)
+
+1. Create a function named `makeCounterLogger` that takes a number as an argument and returns a function. When we invoke the returned function with a second number, it should count up or down from the first number to the second number, logging each number to the console:
+
+   ```terminal
+   > let countlog = makeCounterLogger(5);
+   > countlog(8);
+   5
+   6
+   7
+   8
+   
+   > countlog(2);
+   5
+   4
+   3
+   2
+   ```
+
+   Show Solution
+
+   ```js
+   ```
+
+   
+
+2. In this problem, we'll build a simple todo list program that uses the techniques we've seen in this assignment.
+
+   Write a `makeList` function that creates and returns a new function that implements a todo list. The returned function should have the following behavior:
+
+   - When called with an argument that is not already on the list, it adds that argument to the list.
+   - When called with an argument that is already on the list, it removes the element from the list.
+   - When called without arguments, it prints all of the items on the list. If the list is empty, it prints an appropriate message.
+
+   ```terminal
+   > let list = makeList();
+   > list();
+   The list is empty.
+   
+   > list("make breakfast");
+   make breakfast added!
+   
+   > list("read book");
+   read book added!
+   
+   > list();
+   make breakfast
+   read book
+   
+   > list("make breakfast");
+   make breakfast removed!
+   
+   > list();
+   read book
+   ```
+
+   ```js
+   // test code
+   let list = makeList();
+   list();
+   // The list is empty.
+   
+   list("make breakfast");
+   // make breakfast added!
+   
+   list("read book");
+   // read book added!
+   
+   list();
+   // make breakfast
+   // read book
+   
+   list("make breakfast");
+   // make breakfast removed!
+   
+   list();
+   // read book
+   ```
+
+   Show Solution
+
+   ```js
+   
+   ```
+
+## Improving the API
+
+We resume our discussion of closures and private data by taking another look at the `makeList` function we wrote in the practice problems.
+
+Our solution provides a concise but somewhat unclear interface for developers:
+
+```terminal
+> let list = makeList();
+> list("make breakfast");       // add an item to the list
+make breakfast added!
+
+> list();                       // log the list's items
+make breakfast
+
+> list("make breakfast");       // remove an item from the list
+make breakfast removed!
+
+> list();
+The list is empty.
+```
+
+The function returned by `makeList` lets the user perform three different actions (adding, removing, and listing) by calling the function with appropriate arguments. It works, but the interface isn't clear. Astonishingly, the single call `list('make breakfast')` performs two entirely different operations based on the current state of the list!
+
+We can improve the interface by returning an Object from `makeList` instead of a function. That lets us create an API that is easy to use and understand:
+
+```terminal
+> let list = makeList();
+> list.add("peas");
+peas added!
+
+> list.list();
+peas
+
+> list.add("corn");
+corn added!
+
+> list.list();
+peas
+corn
+
+> list.remove("peas");
+peas removed!
+
+> list.list();
+corn
+```
+
+```js
+// test code
+let list = makeList();
+list.add("peas");
+// peas added!
+
+list.list();
+//peas
+
+list.add("corn");
+//corn added!
+
+list.list();
+//peas
+//corn
+
+list.remove("peas");
+//peas removed!
+
+list.list();
+//corn
+```
+
+## More Practice Problems
+
+1. Modify the `makeList` function so that it returns an object that provides the interface shown above, including `add`, `list`, and `remove` methods.
+
+   Show Solution
+
+   ```js
+   
+   ```
+
+2. Notice that our solution to the previous problem lets us access the array of items through the `items` property:
+
+   ```terminal
+   > list.items  // items is accessible from outside the object
+   ['corn']       // since it is an object property
+   ```
+
+   That wasn't the case in the single-function implementation:
+
+   ```terminal
+   > list.items;  // items isn't accessible from outside the function
+   undefined      // since it is within a closure.
+   ```
+
+   Update the implementation from problem 1 so that it retains the use of an object with methods but prevents outside access to the items the object stores internally.
+
+   Show Solution
+
+   ```js
+   
+   ```
+
+   

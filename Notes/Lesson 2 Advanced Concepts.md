@@ -2792,8 +2792,6 @@ Note that closures only close over the variables that the function needs. If the
 
 Wait a minute. How can you use variables that aren't in scope? Doesn't scope govern what variables you can use? Yes, that's true, but it's a little imprecise. When we say that a variable is no longer in scope, we mean that it isn't in scope at the point in your program where you invoke the function. However, closure and scope are lexical concepts. Where you invoke a function is unimportant; where you define the function is. A closure includes the variables it needs from the scope where you defined the function. Those variables may not be in scope when you invoke the function, but they're still available to the function.
 
-
-
 ##### Closure & Scope
 
 - **Lexical scope**:  the ability for a function scope to access variables from the parent scope / Function has access to variables that are defined in its calling context. 
@@ -2807,7 +2805,7 @@ Wait a minute. How can you use variables that aren't in scope? Doesn't scope gov
 
 ### Summary
 
-Definition
+##### Definition
 
 - **Closure**: combination of function and lexical environment within which the function was [defined] in. 
 - Closures are created when you define a function or method. 
@@ -2822,9 +2820,12 @@ Definition
   - It's important to remember that closure definitions are purely lexical. Closures are based on your program's structure, not by what happens when you execute it. 
   - Even if you never call a particular function, that function forms a closure with its surrounding scope.
 
+##### Why closures?
+
 
 - Functions that return functions are perhaps the most powerful feature of closure in JavaScript.
   - Returning a function allows for private variables --> data protection. 
+- Using closures to restrict data access. 
 
 ##### How can we use variables that aren't in scope?
 
@@ -3346,8 +3347,12 @@ In other words, as we start the program, we start in the global execution contex
 When does the function end? When it encounters a `return` statement or it encounters a closing bracket `}`. When a function ends, the following happens:
 
 1. The local execution contexts pops off the execution stack
+
 2. The functions sends the return value back to the calling context. The calling context is the execution context that called this function, it could be the global execution context or another local execution context. It is up to the calling execution context to deal with the return value at that point. The returned value could be an object, an array, a function, a boolean, anything really. If the function has no `return` statement, `undefined` is returned.
+
 3. The local execution context is destroyed. This is important. Destroyed. All the variables that were declared within the local execution context are erased. They are no longer available. That’s why they’re called local variables.
+
+   (What if two functions close over same variable? is the local variable destroyed before second function is invoked.)
 
 ##### A very basic example
 
@@ -3933,4 +3938,708 @@ Let's get some practice working with closures.
     console.log(obj); // { foo: 'bar' }
     ```
 
-    
+
+# Closures and Private Data
+
+Now that we know what closures are, we're ready to put them to work. In this assignment, we'll focus on how we can use closures to define private data in JavaScript objects.
+
+## What to Focus On
+
+This assignment is relatively short, though it does have some exercises practice problems that may take some time to work through. However, there are only a few concepts of importance. In particular, you should be able to:
+
+- Write code that uses closure to create private data.
+- Explain why private data is desirable.
+- Be able to identify code that gives users of your code a way to alter private data.
+
+## Private Data
+
+- **Private data** is when you can't access a local variable that's part of a closure from anywhere other than, the function that has access to that variable. 
+
+As we've learned, functions combine with the environment at their definition point to form closures. A closure lets a function access its definition environment regardless of when and where the program invokes the function. For instance, here's some code that uses a closure to increment and log a number with each call:
+
+```js
+function makeCounter() {
+  var count = 0;       // declare a new variable
+  return function() {
+    count += 1;        // references count from the outer scope
+    console.log(count);
+  };
+}
+```
+
+We're using `var` in this example merely for a change of pace. It makes no difference whether we use `var` or `let` in this code. Actually, we're using `var` so we don't have to change the image below.
+
+Since `makeCounter` returns a function, we use it like this:
+
+```js
+var counter = makeCounter();
+counter(); // 1
+counter(); // 2
+counter(); // 3
+```
+
+Let's take a closer look at that code:
+
+
+
+![Function scopes](https://d3905n0khyu9wc.cloudfront.net/images/function_scope1.png)
+
+
+
+We mention garbage collection in the above image. That isn't technically correct, so please ignore it. We'll talk about garbage collection a little later.
+
+Note that `count` is private data for the function returned by `makeCounter()`. The closure makes it *impossible* to access the value of `count` from elsewhere:
+
+```js
+var counter = makeCounter();
+console.log(counter.count); // undefined
+console.log(count);         // ReferenceError: count is not defined
+```
+
+On the other hand, the function returned by `makeCounter()` can access and update `counter` without any problems.
+
+Let's get some practice.
+
+## Practice Problems
+
+1. Create a function named `makeCounterLogger` that takes a number as an argument and returns a function. When we invoke the returned function with a second number, it should count up or down from the first number to the second number, logging each number to the console:
+
+   ```terminal
+   > let countlog = makeCounterLogger(5);
+   > countlog(8);
+   5
+   6
+   7
+   8
+   
+   > countlog(2);
+   5
+   4
+   3
+   2
+   ```
+
+   Show Solution
+
+   ```js
+   function makeCounterLogger(start) {
+     return (finish) => {
+       let num;
+       if (start <= finish) {
+         for (num = start; num <= finish; num += 1) {
+           console.log(num);
+         }
+       } else {
+         for (num = start; num >= finish; num -= 1) {
+           console.log(num);
+         }
+       }
+     };
+   }
+   
+   let countlog = makeCounterLogger(5);
+   countlog(8);
+   countlog(2);
+   ```
+
+   
+
+2. In this problem, we'll build a simple todo list program that uses the techniques we've seen in this assignment.
+
+   Write a `makeList` function that creates and returns a new function that implements a todo list. The returned function should have the following behavior:
+
+   - When called with an argument that is not already on the list, it adds that argument to the list.
+   - When called with an argument that is already on the list, it removes the element from the list.
+   - When called without arguments, it prints all of the items on the list. If the list is empty, it prints an appropriate message.
+
+   ```js
+   function makeList() {
+     return function (arg = 'empty') {
+       let list = [];
+       if (arg === 'empty') {
+         list.forEach(item => console.log(item));
+       } else {
+         if (list.some(value => value === arg)) {
+         	let index = list.indexOf(arg);
+         	list.splice(index, 1);
+       	} else {
+         	list.push(arg);
+       }
+     };
+   }
+   ```
+
+   
+
+   ```terminal
+   > let list = makeList();
+   > list();
+   The list is empty.
+   
+   > list("make breakfast");
+   make breakfast added!
+   
+   > list("read book");
+   read book added!
+   
+   > list();
+   make breakfast
+   read book
+   
+   > list("make breakfast");
+   make breakfast removed!
+   
+   > list();
+   read book
+   ```
+
+   Show Solution
+
+   ```js
+   function makeList() {
+     let list = [];
+   
+     return function (arg) {
+       if (arg) {
+         let index = list.indexOf(arg);
+         if (index) {
+           list.splice(index, 1);
+           console.log(`${arg} removed!`);
+         } else {
+           list.push(arg);
+           console.log(`${arg} added!`);
+         }
+       } else if (list.length === 0) {
+         console.log('list is empty');
+       } else {
+         list.forEach(item => console.log(item));
+       }
+     };
+   }
+   ```
+
+   ```js
+   // their solution
+   function makeList() {
+     let items = [];
+   
+     return function(newItem) {
+       let index;
+       if (newItem) {
+         index = items.indexOf(newItem);
+         if (index === -1) {
+           items.push(newItem);
+           console.log(newItem + " added!");
+         } else {
+           items.splice(index, 1);
+           console.log(newItem + " removed!");
+         }
+       } else if (items.length === 0) {
+         console.log("The list is empty.");
+       } else {
+         items.forEach(item => console.log(item));
+       }
+     };
+   }
+   ```
+
+   
+
+## Improving the API
+
+We resume our discussion of closures and private data by taking another look at the `makeList` function we wrote in the practice problems.
+
+Our solution provides a concise but somewhat unclear interface for developers:
+
+```terminal
+> let list = makeList();
+> list("make breakfast");       // add an item to the list
+make breakfast added!
+
+> list();                       // log the list's items
+make breakfast
+
+> list("make breakfast");       // remove an item from the list
+make breakfast removed!
+
+> list();
+The list is empty.
+```
+
+The function returned by `makeList` lets the user perform three different actions (adding, removing, and listing) by calling the function with appropriate arguments. It works, but the interface isn't clear. Astonishingly, the single call `list('make breakfast')` performs two entirely different operations based on the current state of the list!
+
+We can improve the interface by returning an Object from `makeList` instead of a function. That lets us create an API that is easy to use and understand:
+
+```terminal
+> let list = makeList();
+> list.add("peas");
+peas added!
+
+> list.list();
+peas
+
+> list.add("corn");
+corn added!
+
+> list.list();
+peas
+corn
+
+> list.remove("peas");
+peas removed!
+
+> list.list();
+corn
+```
+
+```js
+// test code
+let list = makeList();
+list.add("peas");
+// peas added!
+
+list.list();
+//peas
+
+list.add("corn");
+//corn added!
+
+list.list();
+//peas
+//corn
+
+list.remove("peas");
+//peas removed!
+
+list.list();
+//corn
+```
+
+
+
+## More Practice Problems
+
+1. Modify the `makeList` function so that it returns an object that provides the interface shown above, including `add`, `list`, and `remove` methods.
+
+   Show Solution
+
+   ```js
+   function makeList() {
+     return {
+       todo: [],
+   
+       add(arg) {
+         let index = this.todo.indexOf(arg);
+         if (index === -1) {
+           this.todo.push(arg);
+           console.log(`${arg} added!`);
+         }
+       },
+   
+       remove(arg) {
+         let index = this.todo.indexOf(arg);
+         if (index) {
+           this.todo.splice(index, 1);
+           console.log(`${arg} removed!`);
+         }
+       },
+   
+       list() {
+         if (this.todo.length === 0) {
+           console.log('The list is empty')
+         } else {
+           this.todo.forEach(item => console.log(item));
+         }
+       }
+     };
+   }
+   ```
+
+   
+
+2. Notice that our solution to the previous problem lets us access the array of items through the `items` property:
+
+   ```terminal
+   > list.items  // items is accessible from outside the object
+   ['corn']       // since it is an object property
+   ```
+
+   That wasn't the case in the single-function implementation:
+
+   ```terminal
+   > list.items;  // items isn't accessible from outside the function
+   undefined      // since it is within a closure.
+   ```
+
+   Update the implementation from problem 1 so that it retains the use of an object with methods but prevents outside access to the items the object stores internally.
+
+   Show Solution
+
+   ```js
+   function makeList() {
+     let todo = [];
+     return {
+       add(arg) {
+         let index = todo.indexOf(arg);
+         if (index === -1) {
+           todo.push(arg);
+           console.log(`${arg} added!`);
+         }
+       },
+   
+       remove(arg) {
+         let index = todo.indexOf(arg);
+         if (index) {
+           todo.splice(index, 1);
+           console.log(`${arg} removed!`);
+         }
+       },
+   
+       list() {
+         if (todo.length === 0) {
+           console.log('The list is empty')
+         } else {
+           todo.forEach(item => console.log(item));
+         }
+       }
+     };
+   }
+   
+   ```
+
+   
+
+## Why Do We Need Private Data?
+
+- Private data protects data integrity because it forces developers to use the intended interface. 
+- Private data prevents user of an object from becoming dependent on the implementation. 
+  - Other developers shouldn't care that the todo-list object stores todos in an array, and code shouldn't encourage them to depend on it. 
+  - Instead, object should supply an API that lets other developers manipulate the todo-list regardless of its implementation. 
+  - If implementation later changes, API should remain the same. 
+- You shouldn't rely on private data to keep sensitive information hidden, because even when you restrict access, it's easy to expose data by returning references to that data. 
+  -  Encryption is the only reasonably safe way to protect such data.
+
+As we've seen, you have choices about how to organize your code and data. Using closures to restrict data access is an excellent way to force other developers to use the intended interface. By keeping the collections private, we enforce access via the provided methods.
+
+Restricting access helps protect data integrity since developers must use the interface. In this simple case, data integrity isn't a huge concern. However, the code forces you to use `add` to add an item to the list, which ensures that we can log every addition.
+
+Private data also helps prevent the user of an object from becoming dependent on the implementation. Other developers shouldn't care that a todo-list object stores todos in an array, and your code shouldn't encourage them to depend on it. Instead, your object should supply an API that lets other developers manipulate the todo-list regardless of its implementation. If you later change the implementation, your API should remain the same.
+
+Be careful though. Even when you restrict access, it's easy to expose data by returning references to that data. For instance, if you return a reference to the todos array from our todo-list, that reference can now be used to store invalid data in the todo-list:
+
+```js
+let arr = todoList.getAllTodos();
+arr[0] = undefined;
+```
+
+If you're lucky, the invalid data is benign; however, bad actors often use such opportunities to make malicious changes to data.
+
+```js
+let arr = todoList.getAllTodos();
+while (arr.length > 0) {
+  arr.pop(); // objects are pass by reference --> change to object changes all the objects that reference the original object
+}
+```
+
+You shouldn't rely on private data to keep sensitive information hidden. Encryption is the only reasonably safe way to protect such data. Modern debuggers, such as the ones built-in to your browser, let you step through a program and inspect data at every step, and that makes even private data visible. Program errors can also expose private data, quite by accident.
+
+## Summary
+
+In this lesson, we've learned how to use closures to create functions and objects that use private data, and we've talked about why that ability is useful. In the next lesson, we'll examine the concept of immediately invokable function expressions, better known as IIFEs.
+
+------
+
+# Immediately Invoked Function Expressions
+
+We're now ready to learn about one of JavaScript's most unusual features: immediately invoked function expressions. These expressions let you define and execute a function in a single step. They let you use variable and function names that won't conflict with other names in your code.
+
+## What to Focus On
+
+This assignment is also a short one. However, the concepts discussed are needed often. In particular, you should be able to answer these questions:
+
+- What are IIFEs?
+- How do you use them?
+- How do you use IIFEs to create private scopes?
+- How do you use blocks to create private scopes?
+- How do you use IIFEs to create private data?
+
+## What Are IIFEs and How Do You Use Them?
+
+An **IIFE** or **immediately invoked function expression** is a function that you define and invoke simultaneously. In JavaScript, we use a special syntax to create and execute an IIFE:
+
+```js
+(function() {
+  console.log('hello');
+})();                     // => hello
+```
+
+In this code, we've added a pair of parentheses around a function definition. We then invoke the function by appending a second pair of parentheses. Without the parentheses around the function definition, we may get a syntax error when we try to invoke the function:
+
+Invalid Syntax
+
+```js
+function() {
+  console.log('hello');
+}();                      // SyntaxError: Unexpected token
+```
+
+A little later, we'll show you an example where the surrounding parentheses aren't necessary. However, you should always use them to more clearly show that you're running an IIFE.
+
+## Parentheses
+
+In JavaScript, surrounding a value with parentheses `( )` doesn't change the value. You're well familiar with using parentheses to invoke functions and define a function's parameters, but they can show up elsewhere. When they do, they act as a grouping control; they control the order of evaluation in an expression:
+
+```node
+> (3)
+= 3
+
+> (['apple', 'carrot'])
+= ["apple", "carrot"]
+```
+
+In these two examples, the parentheses didn't affect the results. However, in more complex code, they can:
+
+```node
+> (3 + 5) * 2
+= 16
+
+> 3 + (5 * 2)
+= 13
+```
+
+In the first example, the parentheses tell JavaScript to evaluate `3 + 5` first, then multiply the result by `2`. In the second, they evaluate `5 * 2` first, then add that result to `3`. Note that these expressions produce different results.
+
+With IIFEs, the parentheses around the function definition tell JavaScript that we first want to evaluate the function as an expression. We then take the return value of the expression and use function call parentheses to invoke the function.
+
+All functions, including IIFEs, can take arguments and return values:
+
+```js
+(function(number) {
+  return number + 1;
+})(2);                    // 3
+```
+
+## IIFE Style Issues
+
+You may sometimes see a slightly different style for IIFEs:
+
+```js
+(function() {
+  console.log('hello');
+}());
+```
+
+Here, the argument list is inside the outer set of parentheses. As with the original style, they let JavaScript distinguish between an ordinary function declaration and an IIFE. JavaScript handles this style the same as with the earlier approach. However, the style makes what is happening less apparent. You should use the style that we showed earlier.
+
+We can omit the parentheses around an IIFE when the function definition is an expression that doesn't occur at the beginning of a line (recall the earlier invalid syntax example):
+
+```js
+let foo = function() {
+  return function() {
+    return 10;
+  }() + 5;
+}();
+
+console.log(foo);       // => 15
+```
+
+Again, this style makes it less apparent that we're working with an IIFE. Use parentheses here as well:
+
+```js
+let foo = (function() {
+  return (function() {
+    return 10;
+  })() + 5;
+})();
+
+console.log(foo);       // => 15
+```
+
+## Using IIFEs With Arrow Functions
+
+IIFEs work with all kinds of functions, including arrow functions:
+
+```js
+((first, second) => first * second)(5, 6); // => 30
+```
+
+## Creating Private Scopes With IIFEs
+
+The world is full of messy code; you must learn how to work with it. Suppose you're working with a messy JavaScript program and need to add some code to the program. The program, together with your changes, looks something like this:
+
+```js
+// thousands of lines of messy JavaScript code!
+
+// here you need to find and log the largest even number in an array
+
+// more messy JavaScript code
+```
+
+This task seems simple, so let's take a stab at it:
+
+```js
+// thousands of lines of messy JavaScript code!
+
+let array = [5, 10, 12, 7, 9, 6, 24, -10, -200, 37];
+let largest = -Infinity;
+for (let index = 0; index < array.length; index += 1) {
+  if ((array[index] % 2) === 0 && (array[index] > largest)) {
+    largest = array[index];
+  }
+}
+console.log(largest); // 24
+
+// more messy JavaScript code
+```
+
+This code has a subtle problem. Can you spot it?
+
+Solution
+
+Since functions create new lexical scopes, let's try to put the variable inside a function. That should hide it from the rest of the program since the outer scope doesn't have access to the inner scope:
+
+```js
+// thousands of lines of messy JavaScript code!
+
+function findLargest() {
+  let array = [5, 10, 12, 7, 9, 6, 24, -10, -200, 37];
+  let largest = -Infinity;
+  for (let index = 0; index < array.length; index += 1) {
+    if ((array[index] % 2) === 0 && (array[index] > largest)) {
+      largest = array[index];
+    }
+  }
+
+  return largest;
+}
+
+console.log(findLargest()); // 24
+
+// more messy JavaScript code
+```
+
+This function works, and it successfully isolates `array` and `largest` from any other declarations in the program. However, it too has a problem. Can you identify it?
+
+Solution
+
+We can solve this dilemma by converting the function declaration into an IIFE:
+
+```js
+// thousands of lines of messy JavaScript code!
+
+console.log((function() {
+  let array = [5, 10, 12, 7, 9, 6, 24, -10, -200, 37];
+  let largest = -Infinity;
+  for (let index = 0; index < array.length; index += 1) {
+    if ((array[index] % 2) === 0 && (array[index] > largest)) {
+      largest = array[index];
+    }
+  }
+
+  return largest;
+})()); // 24
+
+// more messy JavaScript code
+```
+
+This code works! It has a private scope for `array` and `largest` so that they don't clash with any other variables. Since the function is unnamed, it also doesn't clash with any other names.
+
+We can also pass values into the IIFE as arguments during invocation:
+
+```js
+// thousands of lines of messy JavaScript code!
+
+console.log((function(array) {
+  let largest = -Infinity;
+  for (let index = 0; index < array.length; index += 1) {
+    if ((array[index] % 2) === 0 && (array[index] > largest)) {
+      largest = array[index];
+    }
+  }
+
+  return largest;
+})([5, 10, 12, 7, 9, 6, 24, -10, -200, 37])); // 24
+
+// more messy JavaScript code
+```
+
+## Using Blocks For Private Scope
+
+In ES6 JavaScript and later, you can use blocks to create private scopes. For instance:
+
+```js
+// thousands of lines of messy JavaScript code!
+
+{
+  let array = [5, 10, 12, 7, 9, 6, 24, -10, -200, 37];
+  let largest = -Infinity;
+  for (let index = 0; index < array.length; index += 1) {
+    if ((array[index] % 2) === 0 && (array[index] > largest)) {
+      largest = array[index];
+    }
+  }
+  console.log(largest); // 24
+}
+
+// more messy JavaScript code
+```
+
+Within the block created by the outer braces, `array`, `largest`, and `index` all have a private, local scope. They won't interfere with any other variables by the same name.
+
+Although blocks are a more straightforward way to create private scopes, existing code often relies on IIFEs to achieve that result. Thus, you need to understand both techniques.
+
+## Using IIFEs to Define Private Data
+
+IIFEs also let us create functions with private data. Of course, we can already do that without IIFEs. In some cases, though, IIFEs lead to simpler code that is more convenient to use.
+
+Consider this code:
+
+```js
+function makeUniqueIdGenerator() {
+  let count = 0;
+  return function() {
+    count += 1;
+    return count;
+  }
+};
+
+let makeUniqueId = makeUniqueIdGenerator();
+makeUniqueId(); // => 1
+makeUniqueId(); // => 2
+makeUniqueId(); // => 3
+```
+
+With IIFEs, we can rewrite this code as:
+
+```js
+const makeUniqueId = (function() {
+  let count = 0;
+  return function() {
+    ++count;
+    return count;
+  };
+})();
+
+makeUniqueId(); // => 1
+makeUniqueId(); // => 2
+makeUniqueId(); // => 3
+```
+
+The IIFE lets us eliminate the `makeUniqueIdGenerator` function and also eliminates the separate invocation of the function.
+
+How does that code work? First, we define a function that creates and returns a function that relies on closure to keep `count` private. We then invoke the first function to create the function that uses `count`. We then assign `makeUniqueId` to the new function so we can invoke it as needed.
+
+It may be a little hard to understand this pattern at first, but you should learn it well. It's used often in real-world JavaScript code.
+
+In the What To Focus On section above, we mentioned that you should be able to answer these two very similar questions:
+
+1. How do you use IIFEs to create private scopes?
+2. How do you use IIFEs to create private data?
+
+As similar as those two questions sound, they refer to different concepts. When we talk about private scope, we're talking about how you can use scope to prevent some code from making accidental changes to variables in its outer scope. When we discuss private data, we're talking about encapsulation: making local data inaccessible from the code's outer scope.
+
+## Summary
+
+In this assignment, we've introduced one of JavaScript's oddest features: immediately invoked function expressions. They may be odd, but that doesn't mean that they aren't useful. For instance, we learned how we could use an IIFE to create a private scope and avoid conflicts with existing names. We also learned how to create private data with IIFEs.
+
+In the next assignment, you'll get some practice working with IIFEs. Afterward, we'll move on and look at some handy shorthand notation that modern JavaScript provides.
